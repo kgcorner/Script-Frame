@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Final Video Result - AIVision</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700;800;900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+  tailwind.config = {
+    darkMode: "class",
+    theme: {
+      extend: {
+        "colors": {
+                "background": "#0b1326",
+                "on-primary-container": "#0d0096",
+                "error-container": "#93000a",
+                "secondary-fixed": "#f0dbff",
+                "surface-variant": "#2d3449",
+                "inverse-on-surface": "#283044",
+                "on-secondary-fixed": "#2c0051",
+                "surface-container": "#171f33",
+                "tertiary-fixed-dim": "#ffb783",
+                "tertiary-container": "#d97721",
+                "outline-variant": "#464554",
+                "primary-fixed-dim": "#c0c1ff",
+                "on-secondary-fixed-variant": "#6900b3",
+                "surface-container-high": "#222a3d",
+                "on-tertiary": "#4f2500",
+                "surface-container-low": "#131b2e",
+                "on-tertiary-container": "#452000",
+                "on-surface": "#dae2fd",
+                "primary-fixed": "#e1e0ff",
+                "on-primary": "#1000a9",
+                "surface-container-lowest": "#060e20",
+                "surface-dim": "#0b1326",
+                "on-tertiary-fixed": "#301400",
+                "surface-container-highest": "#2d3449",
+                "on-primary-fixed": "#07006c",
+                "outline": "#908fa0",
+                "primary": "#c0c1ff",
+                "surface-tint": "#c0c1ff",
+                "secondary-container": "#6f00be",
+                "inverse-surface": "#dae2fd",
+                "tertiary": "#ffb783",
+                "surface": "#0b1326",
+                "tertiary-fixed": "#ffdcc5",
+                "surface-bright": "#31394d",
+                "on-error-container": "#ffdad6",
+                "on-secondary-container": "#d6a9ff",
+                "secondary-fixed-dim": "#ddb7ff",
+                "primary-container": "#8083ff",
+                "on-surface-variant": "#c7c4d7",
+                "secondary": "#ddb7ff",
+                "on-error": "#690005",
+                "on-background": "#dae2fd",
+                "on-primary-fixed-variant": "#2f2ebe",
+                "inverse-primary": "#494bd6",
+                "on-secondary": "#490080",
+                "on-tertiary-fixed-variant": "#703700",
+                "error": "#ffb4ab"
+        },
+        "borderRadius": {
+                "DEFAULT": "0.25rem",
+                "lg": "0.5rem",
+                "xl": "0.75rem",
+                "full": "9999px"
+        },
+        "spacing": {
+                "gutter": "16px",
+                "unit": "4px",
+                "touch-target": "44px",
+                "container-margin": "24px",
+                "section-gap": "48px"
+        },
+        "fontFamily": {
+                "title-md": [
+                        "Geist"
+                ],
+                "headline-lg-mobile": [
+                        "Geist"
+                ],
+                "body-md": [
+                        "Geist"
+                ],
+                "label-sm": [
+                        "Geist"
+                ],
+                "display-lg": [
+                        "Geist"
+                ],
+                "headline-lg": [
+                        "Geist"
+                ]
+        },
+        "fontSize": {
+                "title-md": [
+                        "20px",
+                        {
+                                "lineHeight": "1.4",
+                                "letterSpacing": "-0.01em",
+                                "fontWeight": "500"
+                        }
+                ],
+                "headline-lg-mobile": [
+                        "24px",
+                        {
+                                "lineHeight": "1.2",
+                                "letterSpacing": "-0.02em",
+                                "fontWeight": "600"
+                        }
+                ],
+                "body-md": [
+                        "16px",
+                        {
+                                "lineHeight": "1.6",
+                                "letterSpacing": "0.01em",
+                                "fontWeight": "400"
+                        }
+                ],
+                "label-sm": [
+                        "12px",
+                        {
+                                "lineHeight": "1.0",
+                                "letterSpacing": "0.08em",
+                                "fontWeight": "600"
+                        }
+                ],
+                "display-lg": [
+                        "48px",
+                        {
+                                "lineHeight": "1.1",
+                                "letterSpacing": "-0.04em",
+                                "fontWeight": "600"
+                        }
+                ],
+                "headline-lg": [
+                        "32px",
+                        {
+                                "lineHeight": "1.2",
+                                "letterSpacing": "-0.02em",
+                                "fontWeight": "600"
+                        }
+                ]
+        }
+},
+    },
+  }
+</script>
+<style>
+        body {
+            background-color: theme('colors.background');
+            color: theme('colors.on-surface');
+        }
+        .glass-panel {
+            background: rgba(49, 57, 77, 0.4);
+            backdrop-filter: blur(24px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, theme('colors.inverse-primary') 0%, theme('colors.primary-container') 100%);
+            box-shadow: 0 4px 20px rgba(128, 131, 255, 0.15);
+            transition: all 0.2s ease;
+        }
+        .btn-primary:hover {
+            filter: brightness(1.1);
+            box-shadow: 0 4px 25px rgba(128, 131, 255, 0.25);
+        }
+        .btn-primary:active {
+            transform: scale(0.96);
+        }
+    </style>
+</head>
+<body class="flex h-screen overflow-hidden bg-background">
+<!-- SideNavBar (Shared Component) -->
+<nav aria-label="Sidebar Navigation" class="bg-surface-container-low border-r border-white/5 h-screen w-64 fixed left-0 top-0 flex flex-col h-full py-6 z-40 hidden md:flex">
+<div class="px-6 mb-8 flex items-center gap-3">
+<div class="w-10 h-10 rounded-full bg-surface-bright flex items-center justify-center overflow-hidden border border-white/10">
+<img alt="AI Engine Status" class="w-full h-full object-cover" data-alt="A sleek, high-tech abstract 3D icon representing a neural network node glowing with electric indigo light against a deep charcoal background. The style is modern minimalism, communicating advanced AI processing power and precision." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCBU6vSoQmLptpLhxUBLZwxiaY6RyPjOY2o-9ywa9BvpS1UtpGrcIjkP0Ttlqs1kDu_PlgsII584dPVVEgdDxAE-uhO5T0CYbLkkfN4tRzjdaj6YEcZWQ6cv3Gtpn-1EIzv-niKaHKFFDyhJ2fi5-eelhX4Zlc0N7JbBIw9r8MZNwHzJlqx-PenbAq0-xSVGta7VfmDtZmU34FXDXwnTQHfIHZ3EXUokOkQ5TVP3VPuU9LHMWMM6ynH"/>
+</div>
+<div>
+<h1 class="font-headline-lg text-headline-lg font-bold text-primary text-xl truncate leading-tight">Project Alpha</h1>
+<p class="font-label-sm text-label-sm text-on-surface-variant">V0.4 Draft</p>
+</div>
+</div>
+<div class="flex-1 overflow-y-auto mt-2">
+<a class="flex items-center gap-4 text-on-surface-variant p-3 my-1 mx-2 rounded-xl hover:bg-surface-bright/10 transition-all duration-300 font-title-md text-title-md text-sm" href="#">
+<span class="material-symbols-outlined" data-icon="account_tree">account_tree</span>
+                Workflow
+            </a>
+<a class="flex items-center gap-4 text-on-surface-variant p-3 my-1 mx-2 rounded-xl hover:bg-surface-bright/10 transition-all duration-300 font-title-md text-title-md text-sm" href="#">
+<span class="material-symbols-outlined" data-icon="tune">tune</span>
+                Configure
+            </a>
+<a class="flex items-center gap-4 text-on-surface-variant p-3 my-1 mx-2 rounded-xl hover:bg-surface-bright/10 transition-all duration-300 font-title-md text-title-md text-sm" href="#">
+<span class="material-symbols-outlined" data-icon="auto_awesome_motion">auto_awesome_motion</span>
+                Review
+            </a>
+<!-- Active State -->
+<a class="flex items-center gap-4 bg-primary-container text-on-primary-container rounded-xl p-3 my-1 mx-2 font-title-md text-title-md text-sm scale-[0.98]" href="#">
+<span class="material-symbols-outlined" data-icon="play_circle" data-weight="fill" style="font-variation-settings: 'FILL' 1;">play_circle</span>
+                Generate
+            </a>
+</div>
+<div class="px-4 mt-auto space-y-4">
+<button class="w-full flex items-center justify-center gap-2 btn-primary text-on-primary font-title-md text-title-md text-sm py-3 rounded-lg">
+<span class="material-symbols-outlined text-sm">add</span>
+                New Project
+            </button>
+<div class="pt-4 border-t border-white/5 space-y-1">
+<a class="flex items-center gap-3 text-on-surface-variant hover:text-on-surface px-3 py-2 rounded-lg hover:bg-surface-bright/10 transition-colors font-label-sm text-label-sm" href="#">
+<span class="material-symbols-outlined text-base">help</span> Help
+                </a>
+<a class="flex items-center gap-3 text-on-surface-variant hover:text-on-surface px-3 py-2 rounded-lg hover:bg-surface-bright/10 transition-colors font-label-sm text-label-sm" href="#">
+<span class="material-symbols-outlined text-base">rate_review</span> Feedback
+                </a>
+</div>
+</div>
+</nav>
+<!-- Main Content Area -->
+<main class="flex-1 md:ml-64 relative h-full flex flex-col overflow-y-auto bg-background">
+<!-- TopAppBar (Mobile Fallback / Minimal Nav) -->
+<header class="md:hidden flex justify-between items-center h-16 px-gutter border-b border-white/10 bg-surface-container-low/80 backdrop-blur-xl sticky top-0 z-50">
+<h1 class="font-headline-lg-mobile text-headline-lg-mobile font-bold text-primary">AIVision</h1>
+<button class="text-on-surface-variant p-2">
+<span class="material-symbols-outlined">menu</span>
+</button>
+</header>
+<div class="flex-1 p-gutter md:p-container-margin max-w-7xl mx-auto w-full flex flex-col gap-6">
+<!-- Header Section -->
+<div class="flex flex-col sm:flex-row sm:items-end justify-between gap-4 shrink-0">
+<div>
+<h2 class="font-headline-lg text-headline-lg text-on-surface">Generation Complete</h2>
+<p class="font-body-md text-body-md text-on-surface-variant mt-1">Your video asset has been successfully rendered.</p>
+</div>
+<button class="btn-primary flex items-center gap-2 px-6 py-3 rounded-lg text-on-primary font-title-md text-title-md text-sm shrink-0 whitespace-nowrap">
+<span class="material-symbols-outlined text-lg">add_circle</span>
+                    Create New
+                </button>
+</div>
+<!-- Cinematic Player Canvas -->
+<div class="relative w-full aspect-video bg-black rounded-xl overflow-hidden shadow-[0_0_40px_rgba(128,131,255,0.15)] group shrink-0">
+<!-- Video Placeholder -->
+<img alt="Generated Video Preview" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-[1.02]" data-alt="A cinematic still from a generated video showing a neon-lit futuristic cityscape at dusk, featuring hyper-realistic lighting and deep shadows. The atmosphere is tense and mysterious, utilizing a high-tech modern minimal visual style with electric blue and deep slate tones." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDU7CiOQH9s4BIxiQo6JFpzVjtg21ozASiqwMgJy0usAWQat1h-BElN9VYG0Gg6BYx0hd32QLA3aVGDyXHBp8r4b3uw34PPq63x_Se-BHLBAqruxtFMcM3ud41jOS_iRCg_cLJq71fVcbBU2s1F-YPsk416DcJZ5Vc6OrPzoRvMZuM7Z6DER19M7x6-1EJZkgyv7uTy37aA2mE9klewvB-hqURN85dTX2Wvskgrf6JewlwmHxiy95UO"/>
+<!-- Player Controls Overlay -->
+<div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent flex flex-col justify-end p-6 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+<div class="flex items-center gap-4 text-white">
+<button class="hover:text-primary transition-colors">
+<span class="material-symbols-outlined text-4xl" style="font-variation-settings: 'FILL' 1;">play_arrow</span>
+</button>
+<div class="flex-1 h-1 bg-white/20 rounded-full overflow-hidden relative cursor-pointer">
+<div class="absolute top-0 left-0 h-full w-1/3 bg-primary rounded-full"></div>
+</div>
+<span class="font-label-sm text-label-sm">0:12 / 0:30</span>
+<button class="hover:text-primary transition-colors">
+<span class="material-symbols-outlined text-2xl">fullscreen</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Action & Metadata Bento Grid -->
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6 shrink-0 pb-12">
+<!-- Actions -->
+<div class="glass-panel p-6 rounded-xl flex flex-col justify-center gap-4 lg:col-span-1">
+<button class="w-full flex items-center justify-center gap-3 bg-surface-container-high hover:bg-surface-bright text-on-surface py-4 rounded-lg transition-colors border border-white/5 font-title-md text-title-md text-sm">
+<span class="material-symbols-outlined">download</span>
+                        Download Source (MP4)
+                    </button>
+<button class="w-full flex items-center justify-center gap-3 bg-surface-container-high hover:bg-surface-bright text-on-surface py-4 rounded-lg transition-colors border border-white/5 font-title-md text-title-md text-sm">
+<span class="material-symbols-outlined">share</span>
+                        Share Link
+                    </button>
+<button class="w-full flex items-center justify-center gap-3 text-on-surface-variant hover:text-primary py-2 transition-colors font-label-sm text-label-sm">
+<span class="material-symbols-outlined text-sm">more_horiz</span>
+                        More Options
+                    </button>
+</div>
+<!-- Metadata -->
+<div class="glass-panel p-6 rounded-xl lg:col-span-2 flex flex-col gap-6">
+<div>
+<h3 class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider mb-2 flex items-center gap-2">
+<span class="material-symbols-outlined text-sm">terminal</span> Prompt Used
+                        </h3>
+<p class="font-body-md text-body-md text-on-surface bg-surface-container-lowest/50 p-4 rounded-lg border border-white/5 leading-relaxed">
+                            Cinematic establishing shot of a futuristic mega-city at twilight. Hyper-realistic lighting, deep contrast, neon volumetric fog lingering in the lower levels. Electric indigo and deep slate color palette. Shot on 35mm lens, 4k resolution, smooth pan right.
+                        </p>
+</div>
+<div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+<div class="bg-surface-container-lowest/50 p-3 rounded-lg border border-white/5">
+<p class="font-label-sm text-label-sm text-on-surface-variant mb-1">Duration</p>
+<p class="font-title-md text-title-md text-on-surface">30s</p>
+</div>
+<div class="bg-surface-container-lowest/50 p-3 rounded-lg border border-white/5">
+<p class="font-label-sm text-label-sm text-on-surface-variant mb-1">Resolution</p>
+<p class="font-title-md text-title-md text-on-surface">4K UHD</p>
+</div>
+<div class="bg-surface-container-lowest/50 p-3 rounded-lg border border-white/5">
+<p class="font-label-sm text-label-sm text-on-surface-variant mb-1">Workflow</p>
+<p class="font-title-md text-title-md text-on-surface truncate">Cinematic V2</p>
+</div>
+<div class="bg-surface-container-lowest/50 p-3 rounded-lg border border-white/5">
+<p class="font-label-sm text-label-sm text-on-surface-variant mb-1">Seed</p>
+<p class="font-title-md text-title-md text-on-surface truncate">#849201A</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+</main>
+</body></html>

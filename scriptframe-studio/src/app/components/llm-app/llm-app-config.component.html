@@ -1,0 +1,385 @@
+<!-- ============================================================
+     LLM App Builder
+     Create apps from an LLM provider + model, and manage every
+     existing app (edit, activate/deactivate, delete) in one place.
+     ============================================================ -->
+<div class="llm-app-config">
+
+  <!-- Page header -->
+  <header class="page-header">
+    <div class="page-header-text">
+      <h1>LLM App Builder</h1>
+      <p class="subtitle">Package an LLM provider and model into a reusable app for ScriptFrame workflows — then manage every app from here.</p>
+    </div>
+
+    <nav class="segmented" aria-label="Builder sections">
+      <button type="button"
+              class="segment"
+              [class.active]="activeTab() === 'create'"
+              (click)="setActiveTab('create')">
+        Create app
+      </button>
+      <button type="button"
+              class="segment"
+              [class.active]="activeTab() === 'manage'"
+              (click)="setActiveTab('manage')">
+        Manage apps
+        @if (apps().length > 0) {
+          <span class="count-chip">{{ apps().length }}</span>
+        }
+      </button>
+    </nav>
+  </header>
+
+  <!-- Alerts -->
+  @if (error()) {
+    <div class="alert alert-danger" role="alert">
+      <span class="alert-text">{{ error() }}</span>
+      <button type="button" class="alert-dismiss" (click)="error.set(null)" aria-label="Dismiss">&times;</button>
+    </div>
+  }
+  @if (saveSuccess()) {
+    <div class="alert alert-success" role="status">
+      <span class="alert-text">{{ saveSuccess() }}</span>
+      <button type="button" class="alert-dismiss" (click)="saveSuccess.set(null)" aria-label="Dismiss">&times;</button>
+    </div>
+  }
+
+  <!-- ==================== CREATE / EDIT TAB ==================== -->
+  @if (activeTab() === 'create') {
+
+    @if (isEditing()) {
+      <div class="editing-banner">
+        <span class="pulse-dot"></span>
+        <span>Editing <strong>{{ editingApp()!.name }}</strong> — changes apply to the existing app.</span>
+        <button type="button" class="btn btn-ghost btn-sm" (click)="cancelEdit()">Cancel</button>
+      </div>
+    }
+
+    <form [formGroup]="appForm" (ngSubmit)="saveApp()" class="panel config-form">
+      <div class="panel-head">
+        <div class="panel-head-text">
+          <h2>{{ isEditing() ? 'Update the app' : 'Create a new app' }}</h2>
+          <p>Pick a provider, fetch its models, and tune the generation settings.</p>
+        </div>
+      </div>
+
+      <div class="panel-body">
+        <!-- App Name -->
+        <div class="form-group">
+          <label for="name">App Name <span class="required">*</span></label>
+          <input
+            type="text"
+            id="name"
+            formControlName="name"
+            placeholder="Enter app name (e.g., My Chat Assistant)"
+            class="form-control"
+            [class.error]="nameControl?.invalid && nameControl?.touched"
+          />
+          @if (nameControl?.invalid && nameControl?.touched) {
+            <div class="error-message">App name is required</div>
+          }
+        </div>
+
+        <!-- Description -->
+        <div class="form-group">
+          <label for="description">Description <span class="optional">(optional)</span></label>
+          <textarea
+            id="description"
+            formControlName="description"
+            placeholder="What this LLM app is used for…"
+            class="form-control"
+            rows="3"
+          ></textarea>
+        </div>
+
+        <!-- Provider Selection -->
+        <div class="form-group">
+          <label for="providerId">Provider <span class="required">*</span></label>
+          <select
+            id="providerId"
+            formControlName="providerId"
+            class="form-control select"
+            [class.error]="providerIdControl?.invalid && providerIdControl?.touched"
+          >
+            <option value="">Select a provider…</option>
+            @for (provider of providerConfigs(); track provider.name) {
+              <option [value]="provider.name">{{ provider.displayName }} ({{ provider.name }})</option>
+            }
+            @for (provider of savedProviders(); track provider.name) {
+              <option [value]="provider.name">{{ provider.displayName }} (saved)</option>
+            }
+          </select>
+          @if (isEditing()) {
+            <small class="help-text">
+              Provider: {{ providerDisplayName(editingApp()!) }} — fixed for an existing app. Create a new app to use a different provider.
+            </small>
+          }
+          @if (providerIdControl?.invalid && providerIdControl?.touched) {
+            <div class="error-message">Provider is required</div>
+          }
+        </div>
+
+        <!-- Endpoint -->
+        <div class="form-group">
+          <label for="endpoint">
+            Endpoint
+            @if (selectedProviderConfig()) {
+              <span class="required">*</span>
+            }
+          </label>
+          <input
+            type="url"
+            id="endpoint"
+            formControlName="endpoint"
+            placeholder="Base URL of the LLM provider (e.g., https://api.anthropic.com)"
+            class="form-control"
+            [class.error]="endpointControl?.invalid && endpointControl?.touched"
+          />
+          @if (endpointControl?.invalid && endpointControl?.touched) {
+            <div class="error-message">Please enter a valid endpoint URL</div>
+          }
+          @if (isEditing()) {
+            <small class="help-text">Connection settings belong to the provider row and can&apos;t be changed here.</small>
+          } @else {
+            <small class="help-text">Base URL for {{ selectedProviderConfig()?.displayName || 'the selected provider' }}. Pre-filled with the provider&apos;s default endpoint.</small>
+          }
+        </div>
+
+        <!-- API Key -->
+        <div class="form-group">
+          <label for="apiKey">
+            API Key
+            @if (selectedProviderConfig()?.requiresApiKey) {
+              <span class="required">*</span>
+            }
+          </label>
+          <div class="input-password-wrapper">
+            <input
+              [type]="showApiKey ? 'text' : 'password'"
+              id="apiKey"
+              formControlName="apiKey"
+              placeholder="Enter provider API key (e.g., sk-...)"
+              class="form-control password-input"
+              [class.error]="apiKeyControl?.invalid && apiKeyControl?.touched"
+              (blur)="onApiKeyBlur()"
+            />
+            <button
+              type="button"
+              class="btn-toggle-password"
+              (click)="toggleApiKeyVisibility()"
+            >
+              {{ showApiKey ? 'Hide' : 'Show' }}
+            </button>
+          </div>
+          @if (apiKeyControl?.invalid && apiKeyControl?.touched) {
+            <div class="error-message">API Key is required for this provider</div>
+          }
+          @if (isEditing()) {
+            <small class="help-text">Stored on the provider row — leave unchanged.</small>
+          }
+        </div>
+
+        <!-- Model Selection -->
+        <div class="form-group">
+          <label for="model">Model <span class="required">*</span></label>
+          <div class="model-select-wrapper">
+            <input
+              type="text"
+              id="model"
+              formControlName="model"
+              placeholder="Select or search for a model..."
+              class="form-control model-search"
+              [class.error]="modelControl?.invalid && modelControl?.touched"
+              (input)="onModelSearchChange($event)"
+              list="modelOptions"
+            />
+            <datalist id="modelOptions">
+              @for (model of filteredModels(); track model.id) {
+                <option [value]="model.name">{{ model.displayName || model.name }}</option>
+              }
+            </datalist>
+            @if (isLoadingModels()) {
+              <span class="loading-indicator">Loading models...</span>
+            }
+          </div>
+          @if (modelsError()) {
+            <div class="error-message">{{ modelsError() }}</div>
+          }
+          @if (modelControl?.invalid && modelControl?.touched) {
+            <div class="error-message">Model is required</div>
+          }
+        </div>
+
+        <!-- Temperature -->
+        <div class="form-group">
+          <label for="temperature">Temperature</label>
+          <div class="slider-group">
+            <input
+              type="range"
+              id="temperature"
+              formControlName="temperature"
+              min="0"
+              max="2"
+              step="0.1"
+              class="form-slider"
+            />
+            <span class="slider-value">{{ appForm.value.temperature }}</span>
+          </div>
+          <small class="help-text">Controls randomness (0 = deterministic, 2 = creative)</small>
+        </div>
+
+        <!-- Max Tokens -->
+        <div class="form-group">
+          <label for="maxTokens">Max Tokens</label>
+          <input
+            type="number"
+            id="maxTokens"
+            formControlName="maxTokens"
+            min="1"
+            class="form-control max-tokens"
+          />
+          <small class="help-text">Maximum tokens in response (default: 4096)</small>
+        </div>
+
+        <!-- System Prompt -->
+        <div class="form-group">
+          <label for="systemPrompt">System Prompt <span class="optional">(optional)</span></label>
+          <textarea
+            id="systemPrompt"
+            formControlName="systemPrompt"
+            placeholder="Instructions that define the model's persona and behavior"
+            class="form-control"
+            rows="4"
+          ></textarea>
+        </div>
+
+        <!-- Status (edit mode only — new apps start active) -->
+        @if (isEditing()) {
+          <div class="form-group">
+            <label>Status</label>
+            <div class="status-row">
+              <label class="switch" title="Deactivate or activate this app">
+                <input type="checkbox" formControlName="isActive" />
+                <span class="track"></span>
+              </label>
+              <span class="status" [class.on]="appForm.value.isActive">
+                {{ appForm.value.isActive ? 'Active' : 'Inactive' }}
+              </span>
+            </div>
+            <small class="help-text">Inactive apps keep their configuration but should not be used by workflows.</small>
+          </div>
+        }
+
+        <!-- Actions -->
+        <div class="form-actions">
+          @if (isEditing()) {
+            <button type="button" class="btn btn-ghost" (click)="cancelEdit()" [disabled]="isSubmitting()">Cancel</button>
+          } @else {
+            <button type="button" class="btn btn-secondary" (click)="onReset()" [disabled]="isSubmitting()">Reset</button>
+          }
+          <button type="submit" class="btn btn-primary" [disabled]="isSubmitting() || appForm.invalid">
+            @if (isSubmitting()) {
+              <span class="spinner"></span> Saving…
+            } @else if (isEditing()) {
+              Save changes
+            } @else {
+              Create LLM App
+            }
+          </button>
+        </div>
+      </div>
+    </form>
+  }
+
+  <!-- ==================== MANAGE TAB ==================== -->
+  @if (activeTab() === 'manage') {
+    <section class="panel">
+      <div class="panel-head">
+        <div class="panel-head-text">
+          <h2>Your LLM apps</h2>
+          <p>Apps available to ScriptFrame workflows. Toggle the switch to deactivate an app without deleting it.</p>
+        </div>
+        <div class="panel-head-actions">
+          <span class="stat"><strong>{{ activeAppCount() }}</strong> active</span>
+          <button type="button" class="btn btn-secondary btn-sm" (click)="loadApps()" [disabled]="loadingApps()">
+            @if (loadingApps()) { <span class="spinner"></span> }
+            Refresh
+          </button>
+        </div>
+      </div>
+
+      <div class="panel-body">
+        @if (loadingApps() && apps().length === 0) {
+          <div class="empty-state">
+            <span class="spinner big"></span>
+            <p>Loading apps…</p>
+          </div>
+        } @else if (apps().length === 0) {
+          <div class="empty-state">
+            <div class="empty-icon">◆</div>
+            <h3>No LLM apps yet</h3>
+            <p>Create your first app by choosing a provider and a model.</p>
+            <button type="button" class="btn btn-primary" (click)="setActiveTab('create')">Create app</button>
+          </div>
+        } @else {
+          <div class="table-wrap">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>App</th>
+                  <th>Provider</th>
+                  <th>Model</th>
+                  <th class="th-center">Temp</th>
+                  <th>Status</th>
+                  <th class="th-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (app of apps(); track app.id) {
+                  <tr>
+                    <td>
+                      <div class="app-name">{{ app.name }}</div>
+                      @if (app.description) {
+                        <div class="app-desc">{{ app.description }}</div>
+                      }
+                    </td>
+                    <td><span class="chip mono">{{ providerDisplayName(app) }}</span></td>
+                    <td><span class="chip mono">{{ app.model }}</span></td>
+                    <td class="th-center">{{ app.temperature }}</td>
+                    <td>
+                      <span class="status-cell">
+                        <label class="switch" [title]="app.isActive ? 'Deactivate app' : 'Activate app'">
+                          <input
+                            type="checkbox"
+                            [checked]="app.isActive"
+                            [disabled]="togglingId() === app.id"
+                            (change)="toggleActive(app)"
+                          />
+                          <span class="track"></span>
+                        </label>
+                        <span class="status" [class.on]="app.isActive">{{ app.isActive ? 'Active' : 'Inactive' }}</span>
+                      </span>
+                    </td>
+                    <td class="th-right actions-cell">
+                      <button type="button" class="btn btn-secondary btn-sm" (click)="editApp(app)">Edit</button>
+                      <button
+                        type="button"
+                        class="btn btn-danger-ghost btn-sm"
+                        [disabled]="deletingId() === app.id"
+                        (click)="deleteApp(app)"
+                      >
+                        @if (deletingId() === app.id) { <span class="spinner"></span> }
+                        Delete
+                      </button>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        }
+      </div>
+    </section>
+  }
+</div>

@@ -1,0 +1,148 @@
+/* ============================================================
+   ScriptFrame Client — global styles & design tokens
+   Design system: "Synthetic Motion" (dark, high-tech)
+   ============================================================ */
+
+/* ---------- Design tokens ---------- */
+:root {
+  color-scheme: dark;
+
+  /* Core palette */
+  --background: #0b1326;
+  --surface-dim: #0b1326;
+  --surface-container-lowest: #060e20;
+  --surface-container-low: #131b2e;
+  --surface-container: #171f33;
+  --surface-container-high: #222a3d;
+  --surface-container-highest: #2d3449;
+  --surface-bright: #31394d;
+  --surface-variant: #2d3449;
+
+  --outline: #908fa0;
+  --outline-variant: #464554;
+
+  --on-surface: #dae2fd;
+  --on-surface-variant: #c7c4d7;
+  --inverse-on-surface: #283044;
+
+  --primary: #c0c1ff;
+  --primary-container: #8083ff;
+  --primary-fixed: #e1e0ff;
+  --on-primary: #1000a9;
+  --inverse-primary: #494bd6;
+
+  --secondary: #ddb7ff;
+  --secondary-fixed: #f0dbff;
+  --tertiary: #ffb783;
+  --tertiary-fixed: #ffdcc5;
+
+  --error: #ffb4ab;
+  --error-container: #93000a;
+
+  /* ---- Legacy aliases (existing component styles keep working) ---- */
+  --text: var(--on-surface);
+  --muted: var(--on-surface-variant);
+  --border: rgba(255, 255, 255, 0.10);
+  --bg: var(--surface-dim);
+  --surface: var(--surface-container-low);
+  --danger: var(--error);
+
+  /* ---- Layout ---- */
+  --content-max: 72rem;                                /* 1152px */
+  --gutter: clamp(1rem, 4vw, 2rem);                    /* 16px → 32px */
+  --section-gap: clamp(1.5rem, 3vw, 3rem);             /* 24px → 48px */
+}
+
+/* ---------- Base ---------- */
+*,
+*::before,
+*::after { box-sizing: border-box; }
+
+html { -webkit-text-size-adjust: 100%; }
+
+body {
+  margin: 0;
+  min-height: 100dvh;
+  font-family: "Geist", "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  font-size: 1rem;
+  line-height: 1.6;
+  color: var(--on-surface);
+  background-color: var(--background);
+  -webkit-font-smoothing: antialiased;
+}
+
+img, svg, video { display: block; max-width: 100%; }
+
+h1, h2, h3, h4 {
+  margin: 0;
+  color: var(--on-surface);
+  font-weight: 600;
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+}
+
+h1 {
+  font-size: clamp(1.5rem, 1.1rem + 1.9vw, 2.25rem);   /* 24 → 36px */
+  letter-spacing: -0.02em;
+}
+
+h2 { font-size: clamp(1.25rem, 1.05rem + 0.9vw, 1.6rem); }
+h3 { font-size: 1.0625rem; }
+
+p { margin: 0; }
+
+/* ---------- Shared layout primitives ---------- */
+.content-area {
+  width: 100%;
+  max-width: var(--content-max);
+  margin-inline: auto;                                  /* ← centers the page */
+  padding-block: var(--section-gap);
+  padding-inline: var(--gutter);
+}
+
+.page-header {
+  margin-bottom: var(--section-gap);
+
+  h2 {
+    margin: 0 0 0.5rem;
+    font-size: clamp(1.75rem, 1.1rem + 2.6vw, 3rem);    /* 28 → 48px display */
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    line-height: 1.1;
+  }
+
+  p {
+    max-width: 42rem;
+    color: var(--on-surface-variant);
+    font-size: 1rem;
+  }
+}
+
+.error {
+  color: var(--error);
+  margin: 0 0 1rem;
+}
+
+/* ---------- Shared form controls (dark) ---------- */
+.content-area {
+  select,
+  input:not([type="checkbox"]):not([type="radio"]),
+  textarea {
+    padding: 0.625rem 0.75rem;
+    border-radius: 8px;
+    border: 1px solid var(--outline-variant);
+    background: var(--surface-container-lowest);
+    color: var(--on-surface);
+    font: inherit;
+
+    &::placeholder { color: var(--outline); }
+
+    &:focus {
+      outline: none;
+      border-color: var(--primary-container);
+      box-shadow: 0 0 0 3px rgba(128, 131, 255, 0.25);
+    }
+  }
+}
+
+

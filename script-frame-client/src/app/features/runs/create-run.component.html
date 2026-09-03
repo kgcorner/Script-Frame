@@ -1,0 +1,45 @@
+<div class="page">
+
+  <main class="content-area">
+    <h1>Create a Video Run</h1>
+
+    @if (error()) {
+      <p class="error">{{ error() }}</p>
+    }
+
+    <form (ngSubmit)="submit()">
+      <label>
+        Workflow / Application
+        <select name="workflowId" [(ngModel)]="workflowId" [disabled]="loading()">
+          <option *ngFor="let w of workflows()" [value]="w.id">{{ w.name }}{{ w.maxClipLength ? ' · ≤' + w.maxClipLength + 's clips' : '' }}</option>
+        </select>
+      </label>
+
+      <label>
+        Topic / Theme *
+        <input name="theme" type="text" [(ngModel)]="theme" placeholder="e.g. A day in the life of a lighthouse keeper" />
+      </label>
+
+      <label>
+        Video length (optional, seconds)
+        <input name="targetDurationSeconds" type="number" [(ngModel)]="targetDurationSeconds" min="1" max="60" placeholder="Leave blank for LLM to decide" />
+      </label>
+
+      <button type="submit" [disabled]="loading()">{{ generating() ? 'Generating…' : 'Generate' }}</button>
+    </form>
+
+    @if (generating() || activeJobId()) {
+      <div class="active-job">
+        <svg class="pulse" viewBox="0 0 24 24" width="32" height="32" fill="var(--primary)"><path d="M8,5v14l11-7z"/></svg>
+        <div>
+          <p><strong>Active job:</strong> {{ selectedWorkflowName }} — "{{ theme }}"</p>
+          <p class="job-status-label">{{ statusLabelFor(jobStatus()) }}</p>
+          <progress [value]="progressPercent()" max="100"></progress>
+          @if (reviewReady()) {
+            <button type="button" class="review-btn" (click)="openReview()">Review story &amp; characters →</button>
+          }
+        </div>
+      </div>
+    }
+  </main>
+</div>

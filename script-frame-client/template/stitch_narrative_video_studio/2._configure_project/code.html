@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>AIVision - Configure Workflow</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-bright": "#31394d",
+                        "surface-dim": "#0b1326",
+                        "tertiary": "#ffb783",
+                        "primary": "#c0c1ff",
+                        "on-secondary-fixed": "#2c0051",
+                        "on-error": "#690005",
+                        "inverse-on-surface": "#283044",
+                        "outline-variant": "#464554",
+                        "surface-container-highest": "#2d3449",
+                        "surface-tint": "#c0c1ff",
+                        "error": "#ffb4ab",
+                        "error-container": "#93000a",
+                        "on-tertiary": "#4f2500",
+                        "on-secondary-fixed-variant": "#6900b3",
+                        "secondary-fixed-dim": "#ddb7ff",
+                        "on-secondary": "#490080",
+                        "on-primary-container": "#0d0096",
+                        "primary-fixed": "#e1e0ff",
+                        "on-primary-fixed": "#07006c",
+                        "tertiary-fixed": "#ffdcc5",
+                        "tertiary-fixed-dim": "#ffb783",
+                        "on-primary": "#1000a9",
+                        "surface-container-high": "#222a3d",
+                        "on-surface": "#dae2fd",
+                        "tertiary-container": "#d97721",
+                        "on-tertiary-fixed-variant": "#703700",
+                        "primary-container": "#8083ff",
+                        "on-secondary-container": "#d6a9ff",
+                        "primary-fixed-dim": "#c0c1ff",
+                        "secondary": "#ddb7ff",
+                        "on-tertiary-container": "#452000",
+                        "outline": "#908fa0",
+                        "surface-container-low": "#131b2e",
+                        "on-error-container": "#ffdad6",
+                        "on-background": "#dae2fd",
+                        "background": "#0b1326",
+                        "secondary-fixed": "#f0dbff",
+                        "surface-variant": "#2d3449",
+                        "inverse-primary": "#494bd6",
+                        "inverse-surface": "#dae2fd",
+                        "secondary-container": "#6f00be",
+                        "surface-container-lowest": "#060e20",
+                        "on-primary-fixed-variant": "#2f2ebe",
+                        "on-surface-variant": "#c7c4d7",
+                        "surface-container": "#171f33",
+                        "on-tertiary-fixed": "#301400",
+                        "surface": "#0b1326"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "touch-target": "44px",
+                        "unit": "4px",
+                        "gutter": "16px",
+                        "container-margin": "24px",
+                        "section-gap": "48px"
+                    },
+                    "fontFamily": {
+                        "label-sm": ["Geist", "sans-serif"],
+                        "headline-lg-mobile": ["Geist", "sans-serif"],
+                        "body-md": ["Geist", "sans-serif"],
+                        "title-md": ["Geist", "sans-serif"],
+                        "headline-lg": ["Geist", "sans-serif"],
+                        "display-lg": ["Geist", "sans-serif"]
+                    },
+                    "fontSize": {
+                        "label-sm": ["12px", { "lineHeight": "1.0", "letterSpacing": "0.08em", "fontWeight": "600" }],
+                        "headline-lg-mobile": ["24px", { "lineHeight": "1.2", "letterSpacing": "-0.02em", "fontWeight": "600" }],
+                        "body-md": ["16px", { "lineHeight": "1.6", "letterSpacing": "0.01em", "fontWeight": "400" }],
+                        "title-md": ["20px", { "lineHeight": "1.4", "letterSpacing": "-0.01em", "fontWeight": "500" }],
+                        "headline-lg": ["32px", { "lineHeight": "1.2", "letterSpacing": "-0.02em", "fontWeight": "600" }],
+                        "display-lg": ["48px", { "lineHeight": "1.1", "letterSpacing": "-0.04em", "fontWeight": "600" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        body {
+            font-family: 'Geist', sans-serif;
+            background-color: theme('colors.surface');
+            color: theme('colors.on-surface');
+            overflow-x: hidden;
+        }
+        
+        .glass-card {
+            background: rgba(45, 52, 73, 0.4);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1);
+        }
+
+        .glow-button {
+            position: relative;
+            transition: all 0.3s ease;
+        }
+
+        .glow-button::before {
+            content: '';
+            position: absolute;
+            top: -2px;
+            left: -2px;
+            right: -2px;
+            bottom: -2px;
+            background: linear-gradient(45deg, theme('colors.primary'), theme('colors.secondary'));
+            z-index: -1;
+            border-radius: inherit;
+            filter: blur(8px);
+            opacity: 0.5;
+            transition: opacity 0.3s ease;
+        }
+
+        .glow-button:hover {
+            transform: scale(1.02);
+            filter: brightness(1.1);
+        }
+
+        .glow-button:hover::before {
+            opacity: 0.8;
+        }
+
+        .glow-button:active {
+            transform: scale(0.96);
+        }
+        
+        .custom-slider {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 4px;
+            background: theme('colors.surface-container-highest');
+            border-radius: theme('borderRadius.full');
+            outline: none;
+        }
+        
+        .custom-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: theme('colors.primary');
+            cursor: pointer;
+            box-shadow: 0 0 10px theme('colors.primary');
+            transition: transform 0.1s;
+        }
+        
+        .custom-slider::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
+        }
+    </style>
+</head>
+<body class="bg-surface text-on-surface h-screen flex overflow-hidden">
+<!-- SideNavBar -->
+<aside class="hidden md:flex flex-col h-screen w-64 fixed left-0 top-0 border-r border-white/5 bg-surface-container-low py-6 z-40">
+<div class="px-6 mb-8 flex items-center gap-3">
+<div class="w-10 h-10 rounded-lg overflow-hidden bg-surface-container-high flex items-center justify-center border border-white/10 shrink-0">
+<span class="material-symbols-outlined text-primary" style="font-variation-settings: 'FILL' 1;">generating_tokens</span>
+</div>
+<div>
+<h1 class="font-headline-lg text-headline-lg font-bold text-primary text-xl leading-none">Project Alpha</h1>
+<p class="font-label-sm text-label-sm text-on-surface-variant mt-1">V0.4 Draft</p>
+</div>
+</div>
+<div class="px-4 mb-6">
+<button class="w-full bg-surface-container-high hover:bg-surface-bright/10 text-on-surface border border-white/10 rounded-lg py-2.5 px-4 flex items-center justify-center gap-2 transition-all duration-300 font-label-sm text-label-sm">
+<span class="material-symbols-outlined text-sm">add</span>
+                New Project
+            </button>
+</div>
+<nav class="flex-1 overflow-y-auto px-2 space-y-1">
+<a class="flex items-center gap-4 text-on-surface-variant p-3 my-1 mx-2 rounded-xl hover:bg-surface-bright/10 transition-all duration-300 font-label-sm text-label-sm" href="#">
+<span class="material-symbols-outlined" data-icon="account_tree">account_tree</span>
+<span>Workflow</span>
+</a>
+<a class="flex items-center gap-4 bg-primary-container text-on-primary-container rounded-xl p-3 my-1 mx-2 scale-[0.98] font-label-sm text-label-sm" href="#">
+<span class="material-symbols-outlined" data-icon="tune" style="font-variation-settings: 'FILL' 1;">tune</span>
+<span>Configure</span>
+</a>
+<a class="flex items-center gap-4 text-on-surface-variant p-3 my-1 mx-2 rounded-xl hover:bg-surface-bright/10 transition-all duration-300 font-label-sm text-label-sm" href="#">
+<span class="material-symbols-outlined" data-icon="auto_awesome_motion">auto_awesome_motion</span>
+<span>Review</span>
+</a>
+<a class="flex items-center gap-4 text-on-surface-variant p-3 my-1 mx-2 rounded-xl hover:bg-surface-bright/10 transition-all duration-300 font-label-sm text-label-sm" href="#">
+<span class="material-symbols-outlined" data-icon="play_circle">play_circle</span>
+<span>Generate</span>
+</a>
+</nav>
+<div class="px-2 mt-auto border-t border-white/5 pt-4">
+<a class="flex items-center gap-4 text-on-surface-variant p-3 my-1 mx-2 rounded-xl hover:bg-surface-bright/10 transition-all duration-300 font-label-sm text-label-sm" href="#">
+<span class="material-symbols-outlined" data-icon="help">help</span>
+<span>Help</span>
+</a>
+<a class="flex items-center gap-4 text-on-surface-variant p-3 my-1 mx-2 rounded-xl hover:bg-surface-bright/10 transition-all duration-300 font-label-sm text-label-sm" href="#">
+<span class="material-symbols-outlined" data-icon="rate_review">rate_review</span>
+<span>Feedback</span>
+</a>
+</div>
+</aside>
+<!-- TopNavBar (Mobile Only) -->
+<header class="md:hidden flex justify-between items-center h-16 px-gutter max-w-full bg-surface-container-lowest/80 backdrop-blur-xl docked full-width top-0 sticky z-50 border-b border-white/10 shadow-sm w-full fixed">
+<div class="font-display-lg text-display-lg font-black tracking-tighter text-primary text-2xl">AIVision</div>
+<div class="flex items-center gap-4 text-primary">
+<button class="hover:text-primary transition-colors duration-200">
+<span class="material-symbols-outlined" data-icon="notifications">notifications</span>
+</button>
+<button class="hover:text-primary transition-colors duration-200">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+</button>
+</div>
+</header>
+<!-- Main Content Canvas -->
+<main class="flex-1 ml-0 md:ml-64 pt-16 md:pt-0 h-full overflow-y-auto flex items-center justify-center p-gutter relative">
+<!-- Ambient background glow -->
+<div class="absolute inset-0 z-0 pointer-events-none flex items-center justify-center opacity-30">
+<div class="w-3/4 h-3/4 bg-primary rounded-full blur-[120px] mix-blend-screen"></div>
+</div>
+<!-- Configuration Form Container -->
+<div class="glass-card w-full max-w-3xl rounded-xl p-8 md:p-12 relative z-10 mx-auto">
+<div class="mb-8 text-center">
+<h2 class="font-headline-lg text-headline-lg text-on-surface mb-2">Configure Workflow</h2>
+<p class="font-body-md text-body-md text-on-surface-variant">Define the parameters for your AI video generation.</p>
+</div>
+<form class="space-y-section-gap">
+<!-- Story Theme Input -->
+<div class="space-y-4">
+<div class="flex items-center justify-between">
+<label class="font-title-md text-title-md text-on-surface flex items-center gap-2" for="story-theme">
+<span class="material-symbols-outlined text-primary text-xl">edit_note</span>
+                            Story Theme or Topic
+                        </label>
+<span class="font-label-sm text-label-sm text-outline px-2 py-1 bg-surface-container-highest rounded">Required</span>
+</div>
+<textarea class="w-full bg-[#0F1115] border border-outline-variant rounded-lg p-4 font-body-md text-body-md text-on-surface placeholder:text-outline focus:border-primary focus:ring-1 focus:ring-primary transition-colors resize-none" id="story-theme" placeholder="A cyberpunk detective investigating a neon-lit mystery in a rain-soaked metropolis. High contrast lighting, moody atmosphere..." rows="5"></textarea>
+</div>
+<!-- Video Length Configuration -->
+<div class="space-y-6">
+<div class="flex items-center justify-between">
+<label class="font-title-md text-title-md text-on-surface flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-xl">timelapse</span>
+                            Video Length
+                        </label>
+<span class="font-title-md text-title-md text-primary font-bold" id="length-display">30s</span>
+</div>
+<div class="relative pt-2 pb-6 px-2">
+<input class="custom-slider" id="video-length-slider" max="3" min="0" type="range" value="1"/>
+<!-- Segment Markers -->
+<div class="absolute w-full flex justify-between top-6 left-0 px-2 pointer-events-none">
+<div class="w-1 h-3 bg-outline-variant rounded-full"></div>
+<div class="w-1 h-3 bg-outline-variant rounded-full"></div>
+<div class="w-1 h-3 bg-outline-variant rounded-full"></div>
+<div class="w-1 h-3 bg-outline-variant rounded-full"></div>
+</div>
+<div class="absolute w-full flex justify-between top-10 left-0 text-outline font-label-sm text-label-sm px-1">
+<span>15s</span>
+<span>30s</span>
+<span>60s</span>
+<span>2m</span>
+</div>
+</div>
+</div>
+<!-- Submit Action -->
+<div class="pt-8 flex justify-end">
+<button class="glow-button bg-surface-container-highest text-on-surface font-title-md text-title-md px-8 py-3 rounded-lg flex items-center gap-3" type="button">
+<span class="material-symbols-outlined">auto_awesome</span>
+                        Generate Preview
+                    </button>
+</div>
+</form>
+</div>
+</main>
+<script>
+        // Simple script to update slider value display
+        const slider = document.getElementById('video-length-slider');
+        const display = document.getElementById('length-display');
+        const values = ['15s', '30s', '60s', '2m'];
+
+        slider.addEventListener('input', (e) => {
+            display.textContent = values[e.target.value];
+        });
+    </script>
+</body></html>

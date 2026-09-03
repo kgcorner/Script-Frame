@@ -1,0 +1,114 @@
+:host { display: block; }
+
+.stage {
+  display: inline-block;
+  margin-bottom: 1.5rem;
+  padding: 0.25rem 0.75rem;
+  border-radius: 999px;
+  background: rgba(128, 131, 255, 0.15);
+  color: var(--primary);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-bottom: var(--section-gap);
+
+  button {
+    padding: 0.625rem 1.25rem;
+    border: none;
+    border-radius: 10px;
+    background: var(--primary-container);
+    color: var(--on-primary);
+    font-weight: 600;
+    cursor: pointer;
+    transition: filter 0.15s ease;
+
+    &:hover { filter: brightness(1.1); }
+  }
+
+  input { flex: 1 1 240px; }
+}
+
+h2 {
+  margin: 0 0 0.75rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--border);
+  font-size: 1.25rem;
+}
+
+.story {
+  white-space: pre-wrap;
+  background: var(--surface-container);
+  border: 1px solid var(--border);
+  padding: 1.25rem;
+  border-radius: 12px;
+  line-height: 1.7;
+  margin-bottom: var(--section-gap);
+}
+
+.character-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.character-item > button {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface-container-high);
+  color: var(--on-surface);
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease;
+
+  &:hover {
+    background: var(--primary-container);
+    color: var(--on-primary);
+  }
+}
+
+.edit {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-top: 0.75rem;
+  padding: 1.25rem;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface-container-low);
+
+  label {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--on-surface);
+  }
+
+  textarea {
+    width: 100%;
+    min-height: 120px;
+    resize: vertical;
+  }
+
+  button {
+    align-self: flex-start;
+    padding: 0.625rem 1.25rem;
+    border: none;
+    border-radius: 10px;
+    background: var(--primary-container);
+    color: var(--on-primary);
+    font-weight: 600;
+    cursor: pointer;
+
+    &:hover { filter: brightness(1.1); }
+  }
+}
+

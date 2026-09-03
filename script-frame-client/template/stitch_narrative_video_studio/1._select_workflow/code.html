@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>AIVision - Workflow Selection</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-bright": "#31394d",
+                        "surface-dim": "#0b1326",
+                        "tertiary": "#ffb783",
+                        "primary": "#c0c1ff",
+                        "on-secondary-fixed": "#2c0051",
+                        "on-error": "#690005",
+                        "inverse-on-surface": "#283044",
+                        "outline-variant": "#464554",
+                        "surface-container-highest": "#2d3449",
+                        "surface-tint": "#c0c1ff",
+                        "error": "#ffb4ab",
+                        "error-container": "#93000a",
+                        "on-tertiary": "#4f2500",
+                        "on-secondary-fixed-variant": "#6900b3",
+                        "secondary-fixed-dim": "#ddb7ff",
+                        "on-secondary": "#490080",
+                        "on-primary-container": "#0d0096",
+                        "primary-fixed": "#e1e0ff",
+                        "on-primary-fixed": "#07006c",
+                        "tertiary-fixed": "#ffdcc5",
+                        "tertiary-fixed-dim": "#ffb783",
+                        "on-primary": "#1000a9",
+                        "surface-container-high": "#222a3d",
+                        "on-surface": "#dae2fd",
+                        "tertiary-container": "#d97721",
+                        "on-tertiary-fixed-variant": "#703700",
+                        "primary-container": "#8083ff",
+                        "on-secondary-container": "#d6a9ff",
+                        "primary-fixed-dim": "#c0c1ff",
+                        "secondary": "#ddb7ff",
+                        "on-tertiary-container": "#452000",
+                        "outline": "#908fa0",
+                        "surface-container-low": "#131b2e",
+                        "on-error-container": "#ffdad6",
+                        "on-background": "#dae2fd",
+                        "background": "#0b1326",
+                        "secondary-fixed": "#f0dbff",
+                        "surface-variant": "#2d3449",
+                        "inverse-primary": "#494bd6",
+                        "inverse-surface": "#dae2fd",
+                        "secondary-container": "#6f00be",
+                        "surface-container-lowest": "#060e20",
+                        "on-primary-fixed-variant": "#2f2ebe",
+                        "on-surface-variant": "#c7c4d7",
+                        "surface-container": "#171f33",
+                        "on-tertiary-fixed": "#301400",
+                        "surface": "#0b1326"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "touch-target": "44px",
+                        "unit": "4px",
+                        "gutter": "16px",
+                        "container-margin": "24px",
+                        "section-gap": "48px"
+                    },
+                    "fontFamily": {
+                        "label-sm": ["Geist"],
+                        "headline-lg-mobile": ["Geist"],
+                        "body-md": ["Geist"],
+                        "title-md": ["Geist"],
+                        "headline-lg": ["Geist"],
+                        "display-lg": ["Geist"]
+                    },
+                    "fontSize": {
+                        "label-sm": ["12px", { "lineHeight": "1.0", "letterSpacing": "0.08em", "fontWeight": "600" }],
+                        "headline-lg-mobile": ["24px", { "lineHeight": "1.2", "letterSpacing": "-0.02em", "fontWeight": "600" }],
+                        "body-md": ["16px", { "lineHeight": "1.6", "letterSpacing": "0.01em", "fontWeight": "400" }],
+                        "title-md": ["20px", { "lineHeight": "1.4", "letterSpacing": "-0.01em", "fontWeight": "500" }],
+                        "headline-lg": ["32px", { "lineHeight": "1.2", "letterSpacing": "-0.02em", "fontWeight": "600" }],
+                        "display-lg": ["48px", { "lineHeight": "1.1", "letterSpacing": "-0.04em", "fontWeight": "600" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        body { background-color: #0b1326; color: #dae2fd; }
+        .glass-card { background: rgba(34, 42, 61, 0.4); backdrop-filter: blur(24px); border: 1px solid rgba(255,255,255,0.08); }
+        .ambient-glow:hover { box-shadow: 0 0 40px rgba(192, 193, 255, 0.15); border-color: rgba(192, 193, 255, 0.3); transform: translateY(-2px); transition: all 0.3s ease; }
+    </style>
+</head>
+<body class="bg-background text-on-background min-h-screen flex font-body-md text-body-md overflow-x-hidden">
+<!-- SideNavBar -->
+<nav class="bg-surface-container-low border-r border-white/5 h-screen w-64 fixed left-0 top-0 flex flex-col h-full py-6 hidden md:flex z-40">
+<div class="px-6 mb-8">
+<h1 class="font-headline-lg text-headline-lg font-bold text-primary tracking-tighter">Project Alpha</h1>
+<p class="font-label-sm text-label-sm text-on-surface-variant mt-1 uppercase">V0.4 Draft</p>
+</div>
+<div class="flex-1 overflow-y-auto px-4 space-y-2">
+<a class="flex items-center gap-4 bg-primary-container text-on-primary-container rounded-xl p-3 my-1 mx-2 transition-all duration-300 scale-[0.98]" href="#">
+<span class="material-symbols-outlined" data-icon="account_tree">account_tree</span>
+<span class="font-title-md text-title-md">Workflow</span>
+</a>
+<a class="flex items-center gap-4 text-on-surface-variant p-3 my-1 mx-2 hover:bg-surface-bright/10 transition-all duration-300 rounded-xl" href="#">
+<span class="material-symbols-outlined" data-icon="tune">tune</span>
+<span class="font-title-md text-title-md">Configure</span>
+</a>
+<a class="flex items-center gap-4 text-on-surface-variant p-3 my-1 mx-2 hover:bg-surface-bright/10 transition-all duration-300 rounded-xl" href="#">
+<span class="material-symbols-outlined" data-icon="auto_awesome_motion">auto_awesome_motion</span>
+<span class="font-title-md text-title-md">Review</span>
+</a>
+<a class="flex items-center gap-4 text-on-surface-variant p-3 my-1 mx-2 hover:bg-surface-bright/10 transition-all duration-300 rounded-xl" href="#">
+<span class="material-symbols-outlined" data-icon="play_circle">play_circle</span>
+<span class="font-title-md text-title-md">Generate</span>
+</a>
+</div>
+<div class="px-6 mt-auto space-y-4">
+<button class="w-full bg-gradient-to-r from-primary-container to-inverse-primary text-on-primary-container font-title-md text-title-md py-3 rounded-lg hover:brightness-110 active:scale-95 transition-all shadow-[0_0_20px_rgba(192,193,255,0.2)]">
+                New Project
+            </button>
+<div class="space-y-1">
+<a class="flex items-center gap-4 text-on-surface-variant p-2 hover:bg-surface-bright/10 transition-all duration-300 rounded-lg" href="#">
+<span class="material-symbols-outlined" data-icon="help">help</span>
+<span class="font-label-sm text-label-sm uppercase">Help</span>
+</a>
+<a class="flex items-center gap-4 text-on-surface-variant p-2 hover:bg-surface-bright/10 transition-all duration-300 rounded-lg" href="#">
+<span class="material-symbols-outlined" data-icon="rate_review">rate_review</span>
+<span class="font-label-sm text-label-sm uppercase">Feedback</span>
+</a>
+</div>
+</div>
+</nav>
+<!-- Main Content Area -->
+<div class="flex-1 flex flex-col md:ml-64 w-full">
+<!-- TopNavBar -->
+<header class="bg-surface-container-lowest/80 backdrop-blur-xl border-b border-white/10 shadow-sm docked full-width top-0 sticky z-50 flex justify-between items-center h-16 px-gutter max-w-full">
+<div class="flex items-center gap-6 md:hidden">
+<span class="font-display-lg text-headline-lg-mobile font-black tracking-tighter text-primary">AIVision</span>
+</div>
+<nav class="hidden md:flex items-center gap-8 h-full">
+<a class="text-primary font-bold border-b-2 border-primary pb-1 font-title-md text-title-md h-full flex items-center mt-1" href="#">Workflows</a>
+<a class="text-on-surface-variant font-medium hover:text-primary transition-colors duration-200 font-title-md text-title-md h-full flex items-center" href="#">Assets</a>
+<a class="text-on-surface-variant font-medium hover:text-primary transition-colors duration-200 font-title-md text-title-md h-full flex items-center" href="#">History</a>
+</nav>
+<div class="flex items-center gap-4 text-on-surface-variant">
+<button class="hover:text-primary transition-colors duration-200 p-2 rounded-full hover:bg-white/5"><span class="material-symbols-outlined" data-icon="notifications">notifications</span></button>
+<button class="hover:text-primary transition-colors duration-200 p-2 rounded-full hover:bg-white/5"><span class="material-symbols-outlined" data-icon="settings">settings</span></button>
+<div class="w-8 h-8 rounded-full overflow-hidden border border-outline-variant ml-2">
+<img alt="User profile" class="w-full h-full object-cover" data-alt="A futuristic AI generated avatar profile picture of a stylized glowing face in a dark high tech environment with subtle indigo and slate tones." src="https://lh3.googleusercontent.com/aida-public/AB6AXuC6urnUMDiT6h3Cp70zZKFoDwTc9WrPvHn3g3TSCT3q6LO5rHm14ik1Y72oXAwzjBj3ootKOVp24YirBV-LlhQbSoT-RpRlT2fs5L26UbvGqzg9oSzpzqHy4ls_v-g73XI-AB6TTU2QMVCJr6TbUJTZFSNkuHsEVIjn1aDebci0m0xDHuBRBTQbPeUk61Pnt-6vJsBYReGHlOZuvMjC1mf3LfxCsiQ2B9CiARvjDq84b9vBIFD0pBQR"/>
+</div>
+</div>
+</header>
+<!-- Canvas -->
+<main class="flex-1 p-container-margin md:p-section-gap overflow-y-auto">
+<div class="max-w-6xl mx-auto">
+<div class="mb-12">
+<h2 class="font-display-lg text-display-lg md:text-[48px] text-headline-lg-mobile font-black tracking-tighter text-on-surface mb-2">Select a Workflow</h2>
+<p class="font-body-md text-body-md text-on-surface-variant max-w-2xl">Choose an AI generation pipeline optimized for your desired output format and narrative style.</p>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+<!-- Card 1 -->
+<div class="glass-card rounded-xl p-6 ambient-glow cursor-pointer group flex flex-col h-full">
+<div class="w-12 h-12 rounded-lg bg-surface-container flex items-center justify-center mb-6 text-primary group-hover:scale-110 transition-transform duration-300">
+<span class="material-symbols-outlined text-3xl" data-icon="movie" style="font-variation-settings: 'FILL' 1;">movie</span>
+</div>
+<h3 class="font-headline-lg text-title-md font-semibold text-on-surface mb-3">Cinematic Story</h3>
+<p class="font-body-md text-label-sm text-on-surface-variant font-normal leading-relaxed flex-1">High-fidelity scene generation optimized for dramatic lighting, complex camera moves, and continuous narrative flow.</p>
+<div class="mt-6 flex items-center gap-2">
+<span class="bg-surface-container-high text-on-surface-variant px-3 py-1 rounded-full font-label-sm text-[10px] uppercase tracking-wider">4K Ready</span>
+<span class="bg-surface-container-high text-on-surface-variant px-3 py-1 rounded-full font-label-sm text-[10px] uppercase tracking-wider">24fps</span>
+</div>
+</div>
+<!-- Card 2 -->
+<div class="glass-card rounded-xl p-6 ambient-glow cursor-pointer group flex flex-col h-full">
+<div class="w-12 h-12 rounded-lg bg-surface-container flex items-center justify-center mb-6 text-secondary group-hover:scale-110 transition-transform duration-300">
+<span class="material-symbols-outlined text-3xl" data-icon="smartphone" style="font-variation-settings: 'FILL' 1;">smartphone</span>
+</div>
+<h3 class="font-headline-lg text-title-md font-semibold text-on-surface mb-3">Short Form Social</h3>
+<p class="font-body-md text-label-sm text-on-surface-variant font-normal leading-relaxed flex-1">Fast-paced, high-engagement vertical video generation designed for TikTok, Reels, and Shorts with dynamic motion blur.</p>
+<div class="mt-6 flex items-center gap-2">
+<span class="bg-surface-container-high text-on-surface-variant px-3 py-1 rounded-full font-label-sm text-[10px] uppercase tracking-wider">Vertical</span>
+<span class="bg-surface-container-high text-on-surface-variant px-3 py-1 rounded-full font-label-sm text-[10px] uppercase tracking-wider">60fps</span>
+</div>
+</div>
+<!-- Card 3 -->
+<div class="glass-card rounded-xl p-6 ambient-glow cursor-pointer group flex flex-col h-full">
+<div class="w-12 h-12 rounded-lg bg-surface-container flex items-center justify-center mb-6 text-tertiary group-hover:scale-110 transition-transform duration-300">
+<span class="material-symbols-outlined text-3xl" data-icon="animation" style="font-variation-settings: 'FILL' 1;">animation</span>
+</div>
+<h3 class="font-headline-lg text-title-md font-semibold text-on-surface mb-3">Animated Series</h3>
+<p class="font-body-md text-label-sm text-on-surface-variant font-normal leading-relaxed flex-1">Consistent character models and stylized non-photorealistic rendering pipelines for episodic content creation.</p>
+<div class="mt-6 flex items-center gap-2">
+<span class="bg-surface-container-high text-on-surface-variant px-3 py-1 rounded-full font-label-sm text-[10px] uppercase tracking-wider">Cel Shaded</span>
+<span class="bg-surface-container-high text-on-surface-variant px-3 py-1 rounded-full font-label-sm text-[10px] uppercase tracking-wider">Style Lora</span>
+</div>
+</div>
+<!-- Card 4 -->
+<div class="glass-card rounded-xl p-6 ambient-glow cursor-pointer group flex flex-col h-full">
+<div class="w-12 h-12 rounded-lg bg-surface-container flex items-center justify-center mb-6 text-primary-fixed group-hover:scale-110 transition-transform duration-300">
+<span class="material-symbols-outlined text-3xl" data-icon="work" style="font-variation-settings: 'FILL' 1;">work</span>
+</div>
+<h3 class="font-headline-lg text-title-md font-semibold text-on-surface mb-3">Corporate Explainer</h3>
+<p class="font-body-md text-label-sm text-on-surface-variant font-normal leading-relaxed flex-1">Clean, professional motion graphics and isometric data visualization perfect for B2B communications and pitch decks.</p>
+<div class="mt-6 flex items-center gap-2">
+<span class="bg-surface-container-high text-on-surface-variant px-3 py-1 rounded-full font-label-sm text-[10px] uppercase tracking-wider">Motion GFX</span>
+<span class="bg-surface-container-high text-on-surface-variant px-3 py-1 rounded-full font-label-sm text-[10px] uppercase tracking-wider">Clean</span>
+</div>
+</div>
+<!-- Card 5 -->
+<div class="glass-card rounded-xl p-6 ambient-glow cursor-pointer group flex flex-col h-full">
+<div class="w-12 h-12 rounded-lg bg-surface-container flex items-center justify-center mb-6 text-secondary-fixed group-hover:scale-110 transition-transform duration-300">
+<span class="material-symbols-outlined text-3xl" data-icon="music_video" style="font-variation-settings: 'FILL' 1;">music_video</span>
+</div>
+<h3 class="font-headline-lg text-title-md font-semibold text-on-surface mb-3">Music Visualization</h3>
+<p class="font-body-md text-label-sm text-on-surface-variant font-normal leading-relaxed flex-1">Audio-reactive particle systems and abstract geometric generations synced perfectly to audio track beats and frequencies.</p>
+<div class="mt-6 flex items-center gap-2">
+<span class="bg-surface-container-high text-on-surface-variant px-3 py-1 rounded-full font-label-sm text-[10px] uppercase tracking-wider">Audio Reactive</span>
+<span class="bg-surface-container-high text-on-surface-variant px-3 py-1 rounded-full font-label-sm text-[10px] uppercase tracking-wider">Abstract</span>
+</div>
+</div>
+<!-- Card 6 -->
+<div class="glass-card rounded-xl p-6 ambient-glow cursor-pointer group flex flex-col h-full border-dashed border-outline-variant bg-transparent hover:bg-surface-container-low transition-colors duration-300">
+<div class="flex-1 flex flex-col items-center justify-center text-center opacity-70 group-hover:opacity-100 transition-opacity">
+<span class="material-symbols-outlined text-4xl text-on-surface-variant mb-4" data-icon="add_circle">add_circle</span>
+<h3 class="font-title-md text-title-md text-on-surface mb-2">Custom Pipeline</h3>
+<p class="font-body-md text-label-sm text-on-surface-variant font-normal max-w-[200px]">Build a bespoke node-based generation workflow from scratch.</p>
+</div>
+</div>
+</div>
+</div>
+</main>
+</div>
+</body></html>

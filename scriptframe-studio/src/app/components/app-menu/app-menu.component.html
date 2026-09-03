@@ -1,0 +1,17 @@
+<nav class="app-menu" aria-label="Main navigation">
+  <a routerLink="/workflow" class="brand" title="ScriptFrame">
+    <img src="x-logo.png" alt="ScriptFrame" class="brand-logo" />
+  </a>
+  <ul class="menu-list">
+    @for (item of menuItems; track item.route) {
+      <li class="menu-item">
+        <a
+          class="menu-link"
+          [routerLink]="item.route"
+          routerLinkActive="active"
+          [routerLinkActiveOptions]="{ exact: item.route === '/workflow' }"
+        >{{ item.label }}</a>
+      </li>
+    }
+  </ul>
+</nav>

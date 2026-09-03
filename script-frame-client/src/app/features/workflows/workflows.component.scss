@@ -1,0 +1,182 @@
+:host { display: block; }
+
+/* Workflow cards grid — responsive: 1 col on mobile → up to 3 on wide screens */
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 340px), 1fr));
+  gap: clamp(1rem, 2vw, 1.5rem);
+}
+
+.card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  padding: clamp(1.25rem, 2.5vw, 1.75rem);
+  background: var(--surface-container);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  cursor: pointer;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+
+  &:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.35);
+    border-color: var(--primary-container);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--primary);
+    outline-offset: 2px;
+  }
+}
+
+/* Left accent stripe */
+.workflow-card::before {
+  content: '';
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 4px;
+  border-radius: 16px 0 0 16px;
+  background: var(--primary-container);
+}
+
+.icon-tile { margin-bottom: 1rem; }
+
+h3 {
+  margin: 0 0 0.5rem;
+  font-size: 1.125rem;
+  letter-spacing: -0.01em;
+}
+
+.card p {
+  margin: 0 0 1.25rem;
+  flex: 1;
+  color: var(--on-surface-variant);
+  font-size: 0.875rem;
+  line-height: 1.55;
+}
+
+/* Tags */
+.tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.375rem;
+  margin-top: auto;
+}
+
+.tag {
+  padding: 0.25rem 0.625rem;
+  border-radius: 999px;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.primary-tag   { background: var(--primary-container); color: var(--on-primary); }
+.secondary-tag { background: var(--surface-container-high); color: var(--secondary-fixed); }
+.tertiary-tag  { background: var(--surface-container-highest); color: var(--tertiary-fixed); }
+
+/* Dashed “Custom Pipeline” card — centred content */
+.custom-pipeline {
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  border-style: dashed;
+
+  .icon-tile { margin-inline: auto; }
+
+  p { max-width: 220px; margin-bottom: 0; }
+}
+
+.center { margin-inline: auto; }
+
+/* Notice banner when the API is unreachable (demo data shown) */
+.notice {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-bottom: 1.5rem;
+  padding: 0.75rem 1rem;
+  background: color-mix(in srgb, var(--secondary-fixed) 12%, transparent);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  font-size: 0.875rem;
+  color: var(--on-surface-variant);
+}
+
+.retry {
+  padding: 0.375rem 0.875rem;
+  border: 1px solid var(--primary);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--primary);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+
+  &:hover { background: var(--primary-container); color: var(--on-primary); }
+}
+
+/* Skeleton loading cards */
+.skeleton-card {
+  gap: 0.75rem;
+  min-height: 180px;
+  cursor: default;
+
+  &:hover, &:focus-visible { border-color: var(--border); box-shadow: none; }
+}
+
+.skeleton {
+  border-radius: 8px;
+  background: var(--surface-container-high);
+  overflow: hidden;
+  position: relative;
+
+  &::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    transform: translateX(-100%);
+    background: linear-gradient(90deg, transparent, color-mix(in srgb, white 8%, transparent), transparent);
+    animation: shimmer 1.4s infinite;
+  }
+}
+
+.skeleton-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+}
+
+.skeleton-title {
+  width: 55%;
+  height: 1rem;
+}
+
+.skeleton-line {
+  width: 100%;
+  height: 0.75rem;
+
+  &.short { width: 70%; }
+}
+
+@keyframes shimmer {
+  100% { transform: translateX(100%); }
+}
+
+/* Empty state */
+.empty {
+  padding: 3rem 1.5rem;
+  text-align: center;
+  color: var(--on-surface-variant);
+  border: 1px dashed var(--border);
+  border-radius: 16px;
+}
+

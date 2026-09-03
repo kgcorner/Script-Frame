@@ -1,0 +1,531 @@
+<div class="workflow-editor">
+  <!-- Toolbar -->
+  <header class="toolbar">
+    <div class="toolbar-group">
+      <button class="btn btn-primary" (click)="newWorkflow()" [disabled]="isSaving()">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+          <polyline points="14 2 14 8 20 8"></polyline>
+          <line x1="12" y1="18" x2="12" y2="12"></line>
+          <line x1="9" y1="15" x2="15" y2="15"></line>
+        </svg>
+        New
+      </button>
+      <button class="btn btn-secondary" (click)="showSaveDialog.set(true)" [disabled]="isSaving() || workflow().nodes.length === 0">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
+          <polyline points="17 21 17 13 7 13 7 21"></polyline>
+          <polyline points="7 3 7 8 15 8"></polyline>
+        </svg>
+        Save
+      </button>
+      <button class="btn btn-secondary" (click)="showSavedWorkflows.set(true)">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+        </svg>
+        Open
+      </button>
+      <button class="btn btn-secondary" (click)="exportWorkflow()" [disabled]="workflow().nodes.length === 0">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+          <polyline points="17 8 12 3 7 8"></polyline>
+          <line x1="12" y1="3" x2="12" y2="15"></line>
+        </svg>
+        Export
+      </button>
+      <div class="file-input-wrapper">
+        <button class="btn btn-secondary">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+            <polyline points="17 8 12 3 7 8"></polyline>
+            <line x1="12" y1="3" x2="12" y2="15"></line>
+          </svg>
+          Import
+        </button>
+        <input type="file" accept=".json" (change)="importWorkflow($event)" hidden>
+      </div>
+    </div>
+
+    <div class="toolbar-group">
+      <input
+        type="text"
+        class="search-input"
+        placeholder="Search nodes..."
+        [(ngModel)]="searchQuery"
+        [disabled]="isLoading()"
+      >
+    </div>
+
+    <div class="toolbar-group toolbar-right">
+      @if (error()) {
+        <div class="error-toast">{{ error() }}</div>
+      }
+      <label class="nsfw-toggle" title="Flag this ScriptFrame workflow as NSFW">
+        <input
+          type="checkbox"
+          [checked]="workflow().nsfw === true"
+          (change)="updateWorkflowNsfw($any($event.target).checked)"
+        />
+        <span [class.active]="workflow().nsfw === true">NSFW</span>
+      </label>
+      <div class="zoom-controls">
+        <button class="btn btn-icon" (click)="zoomOut()" title="Zoom out">−</button>
+        <span class="zoom-level">{{ Math.round(canvasState().scale * 100) }}%</span>
+        <button class="btn btn-icon" (click)="zoomIn()" title="Zoom in">+</button>
+        <button class="btn btn-icon" (click)="resetView()" title="Reset view">⌂</button>
+      </div>
+      <button
+        class="btn btn-test"
+        (click)="testWorkflow()"
+        [disabled]="isTesting() || workflow().nodes.length === 0"
+        title="Test connections to configured apps"
+      >
+        @if (isTesting()) {
+          <span class="spinner"></span>
+        } @else {
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+          </svg>
+        }
+        Test
+      </button>
+    </div>
+  </header>
+
+  <!-- Test Results Banner -->
+  @if (testResults().length > 0) {
+    <div class="test-results-panel">
+      <div class="test-results-header">
+        <span class="test-results-title">Connection Test Results</span>
+        <button class="btn-close" (click)="testResults.set([])">×</button>
+      </div>
+      <div class="test-results-list">
+        @for (result of testResults(); track result.nodeId) {
+          <div class="test-result-item" [class.healthy]="result.status === 'healthy'" [class.unhealthy]="result.status === 'unhealthy'">
+            <span class="status-indicator"></span>
+            <span class="node-badge">{{ result.type.toUpperCase() }}</span>
+            <span class="result-message">{{ result.message }}</span>
+            @if (result.latency !== undefined) {
+              <span class="result-latency">{{ result.latency }}ms</span>
+            }
+          </div>
+        }
+      </div>
+    </div>
+  }
+
+  <div class="editor-layout">
+    <!-- Node Palette Sidebar -->
+    <aside class="sidebar palette-sidebar" [class.collapsed]="paletteCollapsed()">
+      <div class="sidebar-header">
+        <h3>ScriptFrame Nodes</h3>
+        <button class="btn btn-icon sidebar-toggle" (click)="paletteCollapsed.set(!paletteCollapsed())" title="Toggle palette">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="15 18 9 12 15 6"></polyline>
+          </svg>
+        </button>
+      </div>
+      @if (!paletteCollapsed()) {
+        <div class="palette-content">
+          <div class="node-category">
+            <div class="category-header">ScriptFrame Building Blocks</div>
+            <div class="node-list">
+              @for (nodeType of filteredPaletteNodeTypes(); track nodeType.type) {
+                <div
+                  class="node-palette-item"
+                  draggable="true"
+                  (dragstart)="onNodeDragStart($event, nodeType)"
+                  [style.border-left-color]="nodeType.color"
+                  title="{{ nodeType.description }}"
+                >
+                  <div class="node-item-header">
+                    <span class="node-type-name">{{ nodeType.displayName }}</span>
+                    <span class="node-type-badge">{{ nodeType.type }}</span>
+                  </div>
+                  <p class="node-type-desc">{{ nodeType.description }}</p>
+                </div>
+              }
+            </div>
+          </div>
+        </div>
+      }
+    </aside>
+
+    <!-- Main Canvas Area -->
+    <main class="canvas-area">
+      <div
+        #canvasWrapper
+        class="canvas-wrapper"
+        (mousedown)="onCanvasMouseDown($event)"
+        (mousemove)="onCanvasMouseMove($event)"
+        (mouseup)="onCanvasMouseUp($event)"
+        (mouseleave)="onCanvasMouseUp($event)"
+        (drop)="onCanvasDrop($event)"
+        (dragover)="onCanvasDragOver($event)"
+      >
+        <!-- LiteGraph canvas host. The WorkflowEditorLiteGraphService injects a <canvas> here at runtime. -->
+        <div
+          #canvas
+          class="canvas"
+          (drop)="onCanvasDrop($event)"
+          (dragover)="onCanvasDragOver($event)"
+        >
+        </div>
+      </div>
+    </main>
+
+    <!-- Properties Sidebar -->
+    <aside class="sidebar properties-sidebar" [class.collapsed]="propertiesCollapsed()">
+      <div class="sidebar-header">
+        <h3>Properties</h3>
+        <button class="btn btn-icon sidebar-toggle" (click)="propertiesCollapsed.set(!propertiesCollapsed())" title="Toggle properties">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="9 18 15 12 9 6"></polyline>
+          </svg>
+        </button>
+      </div>
+      @if (!propertiesCollapsed()) {
+        <div class="properties-content">
+          @if (selectedNode().node) {
+            <div class="node-properties">
+              <div class="property-section">
+                <h4>{{ selectedNode().node!.title }}</h4>
+                <span class="node-type-badge">{{ selectedNode().node!.type.toUpperCase() }}</span>
+              </div>
+
+              <!-- Worker Node Specific Properties -->
+              @if (selectedNode().node!.type === 'worker') {
+                <div class="property-section">
+                  <h4>LLM Port</h4>
+                  <div class="property-row">
+                    <label>Selected LLM App</label>
+                    <select
+                      class="property-input"
+                      [value]="selectedNode().node!.data?.llmAppId || ''"
+                      (change)="updateNodeData(selectedNode().node!.id, 'llmAppId', $any($event.target).value); updateNodeData(selectedNode().node!.id, 'llmAppName', $any(getLlmAppName($any($event.target).value)))"
+                    >
+                      <option value="">-- Choose LLM App --</option>
+                      @for (app of llmApps(); track app.id) {
+                        <option [value]="app.id">{{ app.name }} ({{ app.model }})</option>
+                      }
+                    </select>
+                  </div>
+                  <!-- System prompt for the LLM port (shown once an LLM App is selected) -->
+                  @if (selectedNode().node!.data?.llmAppId) {
+                    <div class="property-row">
+                      <label>System Prompt</label>
+                      <textarea
+                        class="property-textarea"
+                        rows="4"
+                        placeholder="Enter system prompt for this LLM App..."
+                        [value]="selectedNode().node!.data?.systemPrompt || ''"
+                        (input)="updateNodeData(selectedNode().node!.id, 'systemPrompt', $any($event.target).value)"
+                      ></textarea>
+                    </div>
+                  }
+                </div>
+
+                <div class="property-section">
+                  <h4>ComfyUI Stack Port</h4>
+                  <div class="property-row">
+                    <label>Selected ComfyUI Stack</label>
+                    <select
+                      class="property-input"
+                      [value]="selectedNode().node!.data?.comfyuiStackId || ''"
+                      (change)="updateNodeData(selectedNode().node!.id, 'comfyuiStackId', $any($event.target).value); updateNodeData(selectedNode().node!.id, 'comfyuiStackName', $any(getComfyuiStackName($any($event.target).value)))"
+                    >
+                      <option value="">-- Choose ComfyUI Stack --</option>
+                      @for (stack of comfyuiStacks(); track stack.id) {
+                        <option [value]="stack.id">{{ stack.name }} ({{ stack.appIds.length }} app(s))</option>
+                      }
+                    </select>
+                  </div>
+                </div>
+
+                <div class="property-section">
+                  <h4>Moderation</h4>
+                  <div class="property-row">
+                    <label class="checkbox-label">
+                      <input
+                        type="checkbox"
+                        class="property-checkbox"
+                        [checked]="selectedNode().node!.data?.nsfw === true"
+                        (change)="updateNodeData(selectedNode().node!.id, 'nsfw', $any($event.target).checked)"
+                      />
+                      Allow NSFW content
+                    </label>
+                  </div>
+                </div>
+              }
+
+              <!-- LLM App Node Specific Properties -->
+              @if (selectedNode().node!.type === 'llm') {
+                <div class="property-section">
+                  <h4>LLM App Configuration</h4>
+                  <div class="property-row">
+                    <label>Selected App</label>
+                    <select
+                      class="property-input"
+                      [value]="selectedNode().node!.data?.appId || ''"
+                      (change)="updateNodeData(selectedNode().node!.id, 'appId', $any($event.target).value)"
+                    >
+                      <option value="">-- Choose LLM App --</option>
+                      @for (app of llmApps(); track app.id) {
+                        <option [value]="app.id">{{ app.name }} ({{ app.model }})</option>
+                      }
+                    </select>
+                  </div>
+                  <div class="property-row">
+                    <label>System Prompt</label>
+                    <textarea
+                      class="property-textarea"
+                      rows="4"
+                      placeholder="Enter system prompt for this LLM App (e.g., instructions for story/character generation)..."
+                      [value]="selectedNode().node!.data?.systemPrompt || ''"
+                      (input)="updateNodeData(selectedNode().node!.id, 'systemPrompt', $any($event.target).value)"
+                    ></textarea>
+                  </div>
+                </div>
+              }
+
+              <!-- ComfyUI Stack Node Specific Properties -->
+              @if (selectedNode().node!.type === 'comfyui-stack') {
+                <div class="property-section">
+                  <h4>ComfyUI Stack Configuration</h4>
+                  <div class="property-row">
+                    <label>Selected Stack</label>
+                    <select
+                      class="property-input"
+                      [value]="selectedNode().node!.data?.comfyuiStackId || ''"
+                      (change)="updateNodeData(selectedNode().node!.id, 'comfyuiStackId', $any($event.target).value); updateNodeData(selectedNode().node!.id, 'comfyuiStackName', $any(getComfyuiStackName($any($event.target).value)))"
+                    >
+                      <option value="">-- Choose ComfyUI Stack --</option>
+                      @for (stack of comfyuiStacks(); track stack.id) {
+                        <option [value]="stack.id">{{ stack.name }} ({{ stack.appIds.length }} app(s))</option>
+                      }
+                    </select>
+                  </div>
+                </div>
+              }
+
+              <!-- ComfyUI App Node Specific Properties -->
+              @if (selectedNode().node!.type === 'comfyui-app') {
+                <div class="property-section">
+                  <h4>ComfyUI App Configuration</h4>
+                  <div class="property-row">
+                    <label>Selected App</label>
+                    <select
+                      class="property-input"
+                      [value]="selectedNode().node!.data?.comfyuiAppId || ''"
+                      (change)="updateNodeData(selectedNode().node!.id, 'comfyuiAppId', $any($event.target).value); updateNodeData(selectedNode().node!.id, 'comfyuiAppName', $any(getComfyuiAppName($any($event.target).value)))"
+                    >
+                      <option value="">-- Choose ComfyUI App --</option>
+                      @for (app of comfyuiApps(); track app.id) {
+                        <option [value]="app.id">{{ app.name }}</option>
+                      }
+                    </select>
+                  </div>
+                </div>
+              }
+
+              <div class="property-section">
+                <h4>Position</h4>
+                <div class="property-row">
+                  <label>X</label>
+                  <input type="number" class="property-input" [value]="Math.round(selectedNode().node!.position.x)" readonly>
+                </div>
+                <div class="property-row">
+                  <label>Y</label>
+                  <input type="number" class="property-input" [value]="Math.round(selectedNode().node!.position.y)" readonly>
+                </div>
+              </div>
+
+              <div class="property-section">
+                <h4>Inputs</h4>
+                @if (selectedNode().node!.inputs.length === 0) {
+                  <p class="socket-empty">No input sockets</p>
+                } @else {
+                  @for (input of selectedNode().node!.inputs; track input.name; let i = $index) {
+                    <div class="socket-info">
+                      <span class="socket-name">{{ input.name }}</span>
+                      <span class="socket-type" [style.background]="getTypeColor(input.type)">{{ input.type }}</span>
+                      @if (input.link) {
+                        <span class="socket-connected">Connected</span>
+                      } @else {
+                        <span class="socket-unconnected">Unconnected</span>
+                      }
+                    </div>
+                  }
+                }
+              </div>
+
+              <div class="property-section">
+                <h4>Outputs</h4>
+                @if (selectedNode().node!.outputs.length === 0) {
+                  <p class="socket-empty">No output sockets</p>
+                } @else {
+                  @for (output of selectedNode().node!.outputs; track output.name; let i = $index) {
+                    <div class="socket-info">
+                      <span class="socket-name">{{ output.name }}</span>
+                      <span class="socket-type" [style.background]="getTypeColor(output.type)">{{ output.type }}</span>
+                      <span class="socket-connections">{{ output.links.length }} connection(s)</span>
+                    </div>
+                  }
+                }
+              </div>
+
+              <div class="property-actions">
+                <button class="btn btn-danger" (click)="deleteNode(selectedNode().node!.id)">
+                  <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="3 6 5 6 21 6"></polyline>
+                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                  </svg>
+                  Delete Node
+                </button>
+              </div>
+            </div>
+          } @else {
+            <div class="no-selection">
+              <svg class="icon-large" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                <line x1="9" y1="9" x2="15" y2="15"></line>
+                <line x1="15" y1="9" x2="9" y2="15"></line>
+              </svg>
+              <p>Select a node to view properties</p>
+            </div>
+          }
+        </div>
+      }
+    </aside>
+  </div>
+
+<!-- Save Workflow Dialog -->
+  @if (showSaveDialog()) {
+    <div class="modal-overlay" (click)="closeSaveDialog()">
+      <div class="modal modal-lg" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <h3>{{ workflow().id ? 'Update ScriptFrame Workflow' : 'Save ScriptFrame Workflow' }}</h3>
+          <button class="btn-close" (click)="closeSaveDialog()">×</button>
+        </div>
+        <div class="modal-body">
+          <form #saveForm="ngForm" (ngSubmit)="confirmSaveWorkflow()">
+            <div class="form-group">
+              <label for="workflowName">Workflow Name *</label>
+              <input
+                type="text"
+                id="workflowName"
+                class="form-input"
+                [(ngModel)]="saveDialogData.name"
+                name="workflowName"
+                required
+                placeholder="Enter workflow name"
+              >
+            </div>
+            
+            <div class="form-group">
+              <label for="workflowDescription">Description</label>
+              <textarea
+                id="workflowDescription"
+                class="form-input"
+                [(ngModel)]="saveDialogData.description"
+                name="workflowDescription"
+                placeholder="Optional description"
+                rows="3"
+              ></textarea>
+            </div>
+
+            <div class="form-group">
+              <label for="maxClipLength">Maximum Clip Length (seconds)</label>
+              <input
+                type="number"
+                id="maxClipLength"
+                class="form-input"
+                [(ngModel)]="saveDialogData.maxClipLength"
+                name="maxClipLength"
+                min="1"
+                max="3600"
+                step="1"
+                placeholder="e.g., 30 (leave empty for no limit)"
+              >
+              <small class="form-hint">Maximum duration for a single generated video clip. Leave empty for no limit.</small>
+            </div>
+
+            <div class="form-group">
+              <label for="maxTimeout">Maximum Timeout (seconds)</label>
+              <input
+                type="number"
+                id="maxTimeout"
+                class="form-input"
+                [(ngModel)]="saveDialogData.maxTimeout"
+                name="maxTimeout"
+                min="10"
+                max="7200"
+                step="1"
+                placeholder="e.g., 300 (leave empty for no limit)"
+              >
+              <small class="form-hint">Maximum timeout for video generation regardless of ComfyUI app. Leave empty for no limit.</small>
+            </div>
+
+            <div class="form-group">
+              <label class="checkbox-label">
+                <input
+                  type="checkbox"
+                  [(ngModel)]="saveDialogData.nsfw"
+                  name="nsfw"
+                >
+                <span>Flag as NSFW</span>
+              </label>
+            </div>
+
+            <div class="modal-actions">
+              <button type="button" class="btn btn-secondary" (click)="closeSaveDialog()">Cancel</button>
+              <button type="submit" class="btn btn-primary" [disabled]="isSaving() || !saveDialogData.name.trim()">
+                @if (isSaving()) {
+                  <span class="spinner"></span>
+                  Saving...
+                } @else {
+                  {{ workflow().id ? 'Update' : 'Save' }}
+                }
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- Saved Workflows Modal -->
+  <!-- Saved Workflows Modal -->
+  @if (showSavedWorkflows()) {
+    <div class="modal-overlay" (click)="showSavedWorkflows.set(false)">
+      <div class="modal" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <h3>Saved ScriptFrame Workflows</h3>
+          <button class="btn btn-icon" (click)="showSavedWorkflows.set(false)">
+            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="18" y1="6" x2="6" y2="18"></line>
+              <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+          </button>
+        </div>
+        <div class="modal-body">
+          @if (savedWorkflows().length === 0) {
+            <p class="empty-state">No saved ScriptFrame workflows yet</p>
+          } @else {
+            <div class="workflow-list">
+              @for (wf of savedWorkflows(); track wf.id) {
+                <div class="workflow-item" (click)="loadWorkflow(wf); showSavedWorkflows.set(false)">
+                  <div class="workflow-info">
+                    <h4>{{ wf.name }}</h4>
+                    <p>{{ wf.description || 'No description' }}</p>
+                    <span class="workflow-meta">{{ wf.nodes.length }} nodes • {{ wf.updatedAt | date:'short' }}</span>
+                  </div>
+                </div>
+              }
+            </div>
+          }
+        </div>
+      </div>
+    </div>
+  }
+</div>

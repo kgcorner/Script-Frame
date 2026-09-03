@@ -1,0 +1,107 @@
+:host { display: block; }
+
+/* Narrow, centred form column (global .content-area already centres it) */
+.content-area { max-width: 40rem; }
+
+h1 { margin-bottom: 1.5rem; }
+
+form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--on-surface);
+}
+
+button[type="submit"] {
+  align-self: flex-start;
+  margin-top: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-radius: 10px;
+  background: linear-gradient(135deg, var(--primary-container), var(--inverse-primary));
+  color: var(--on-primary);
+  font-weight: 600;
+  cursor: pointer;
+  transition: filter 0.15s ease, transform 0.1s ease;
+
+  &:hover:not(:disabled) { filter: brightness(1.1); }
+  &:active:not(:disabled) { transform: scale(0.97); }
+  &:disabled { opacity: 0.6; cursor: not-allowed; }
+}
+
+/* Active job indicator */
+.active-job {
+  display: flex;
+  gap: 1rem;
+  align-items: flex-start;
+  margin-top: 2rem;
+  padding: 1.25rem;
+  background: var(--surface-container);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+
+  .pulse {
+    flex: none;
+    animation: pulse 1.5s ease-in-out infinite;
+  }
+
+  .job-status-label {
+    margin: 0 0 0.5rem;
+    font-size: 0.6875rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--secondary-fixed);
+  }
+
+  p {
+    margin: 0 0 0.75rem;
+    font-size: 0.875rem;
+    color: var(--on-surface-variant);
+
+    strong { color: var(--on-surface); }
+  }
+
+  progress {
+    width: min(100%, 240px);
+    height: 6px;
+    border-radius: 999px;
+    overflow: hidden;
+    appearance: none;
+
+    &::-webkit-progress-bar { background: var(--surface-container-high); border-radius: 999px; }
+    &::-webkit-progress-value { background: var(--primary-container); border-radius: 999px; }
+    &::-moz-progress-bar { background: var(--primary-container); border-radius: 999px; }
+  }
+
+  .review-btn {
+    display: inline-block;
+    margin-top: 0.875rem;
+    padding: 0.625rem 1.25rem;
+    border: none;
+    border-radius: 10px;
+    background: linear-gradient(135deg, var(--primary-container), var(--inverse-primary));
+    color: var(--on-primary);
+    font: inherit;
+    font-weight: 600;
+    cursor: pointer;
+    transition: filter 0.15s ease, transform 0.1s ease;
+
+    &:hover { filter: brightness(1.1); }
+    &:active { transform: scale(0.97); }
+  }
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+

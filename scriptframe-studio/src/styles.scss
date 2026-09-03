@@ -1,0 +1,111 @@
+/* ============================================================
+   Global dark theme
+   ------------------------------------------------------------
+   The client ships without a default stylesheet. This file is the
+   single source of truth for the dark theme applied across every
+   page (workflow editor, LLM app config, ComfyUI apps list, and
+   workflow input selector). Components consume the palette via
+   CSS variables declared here.
+   ============================================================ */
+
+:root {
+  /* Native form controls, date pickers, and scrollbars render dark */
+  color-scheme: dark;
+
+  /* Surfaces */
+  --bg-primary: #0f172a;
+  --bg-secondary: #1e293b;
+  --bg-tertiary: #334155;
+  --bg-hover: #475569;
+
+  /* Text */
+  --text-primary: #f1f5f9;
+  --text-secondary: #94a3b8;
+  --text-muted: #64748b;
+
+  /* Borders */
+  --border-color: #334155;
+  --border-light: #475569;
+
+  /* Accents */
+  --primary-color: #3b82f6;
+  --primary-hover: #2563eb;
+  --success-color: #22c55e;
+  --success-hover: #16a34a;
+  --danger-color: #ef4444;
+  --danger-hover: #dc2626;
+  --warning-color: #f59e0b;
+
+  /* Translucent surfaces (alerts, active rows, focus rings) */
+  --danger-bg: rgba(239, 68, 68, 0.15);
+  --success-bg: rgba(34, 197, 94, 0.15);
+  --info-bg: rgba(59, 130, 246, 0.15);
+  --warning-bg: rgba(245, 158, 11, 0.12);
+
+  --shadow-color: rgba(0, 0, 0, 0.35);
+  --focus-ring: rgba(59, 130, 246, 0.25);
+}
+
+html,
+body {
+  min-height: 100%;
+}
+
+body {
+  margin: 0;
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* ============================================================
+   ComfyUI LiteGraph stylesheet
+   ------------------------------------------------------------
+   Provides the search box, context menus, and dialogs used by the
+   embedded @comfyorg/litegraph workflow canvas.
+   ============================================================ */
+@import '@comfyorg/litegraph/style.css';
+
+/* Scope litegraph's light-ish dialog styles to the dark theme. */
+.litegraph.litesearchbox,
+.litegraph.litecontextmenu,
+.litegraph.graphdialog {
+  --bg: #1e293b;
+  --border: #334155;
+  background: #1e293b;
+  color: #f1f5f9;
+  border: 1px solid #334155;
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+.litegraph.litesearchbox input,
+.litegraph.litesearchbox select,
+.litegraph.graphdialog input,
+.litegraph.graphdialog select {
+  background: #0f172a;
+  color: #f1f5f9;
+  border: 1px solid #334155;
+  border-radius: 4px;
+  padding: 4px 6px;
+}
+
+.litegraph lite-search-item,
+.litegraph .lite-search-item,
+.litegraph .litecontextmenu .litem {
+  color: #f1f5f9;
+}
+
+.litegraph .lite-search-item:hover,
+.litegraph .litecontextmenu .litem:hover,
+.litegraph .litecontextmenu .litem.selected {
+  background: #334155;
+  color: #fff;
+}
+
+.litegraph .lite-search-item-type {
+  color: #94a3b8;
+}

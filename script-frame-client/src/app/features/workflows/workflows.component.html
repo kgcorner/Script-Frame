@@ -1,0 +1,51 @@
+<div class="page">
+
+  <main class="content-area">
+    <div class="page-header">
+      <h2>Select a Workflow</h2>
+      <p>Choose an AI generation pipeline optimized for your desired output format and narrative style.</p>
+    </div>
+
+    @if (usingMock()) {
+      <div class="notice">
+        <span>⚠︎ Backend unreachable — showing demo workflows. The same screen will list your real pipelines once the API is up.</span>
+        <button type="button" class="retry" (click)="retry()">Retry</button>
+      </div>
+    }
+
+    @if (loading()) {
+      <section class="grid" aria-label="Loading workflows">
+        @for (skeleton of skeletons; track $index) {
+          <div class="card skeleton-card" aria-hidden="true">
+            <div class="skeleton skeleton-icon"></div>
+            <div class="skeleton skeleton-title"></div>
+            <div class="skeleton skeleton-line"></div>
+            <div class="skeleton skeleton-line short"></div>
+          </div>
+        }
+      </section>
+    } @else if (workflows().length === 0) {
+      <div class="empty">
+        <p>No workflows available yet.</p>
+      </div>
+    } @else {
+      <section class="grid" aria-label="Available workflows">
+        @for (workflow of workflows(); track workflow.id; let i = $index) {
+          <button type="button" class="card workflow-card group" (click)="navigateToRun(workflow.id)">
+            <svg class="icon-tile" viewBox="0 0 24 24" width="32" height="32" [attr.fill]="iconFor(i).fill"><path [attr.d]="iconFor(i).d"/></svg>
+            <h3>{{ workflow.name }}</h3>
+            <p>{{ workflow.description || 'No description provided for this workflow.' }}</p>
+            <div class="tags">
+              @if (workflow.maxClipLength) {
+                <span class="tag primary-tag">Up to {{ workflow.maxClipLength }}s</span>
+              }
+              @if (workflow.nsfw) {
+                <span class="tag secondary-tag">NSFW</span>
+              }
+            </div>
+          </button>
+        }
+      </section>
+    }
+  </main>
+</div>

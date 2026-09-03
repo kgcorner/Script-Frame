@@ -1,0 +1,20 @@
+<main class="content-area">
+  <h1>Final Video</h1>
+
+  @if (loading()) {
+    <p>Loading video…</p>
+  } @else if (mock) {
+    <div class="video-wrap">
+      <div class="placeholder">
+        <svg viewBox="0 0 24 24" width="64" height="64" fill="var(--primary)"><path d="M8,5v14l11-7z"/></svg>
+        <p>This is a mock preview of the final video.</p>
+      </div>
+    </div>
+  } @else if (error()) {
+    <p class="error">{{ error() }}</p>
+  } @else {
+    <div class="video-wrap">
+      <video [src]="video$ | async" controls></video>
+    </div>
+  }
+</main>
