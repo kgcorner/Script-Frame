@@ -265,4 +265,200 @@ export interface LLMAppDetailResponse {
   data: LLMApp;
 }
 
+// Generator types (workflows-cfg.json driven I2V/T2V/T2I endpoints)
+export type GeneratorWorkflowInputType = 'string' | 'integer' | 'float' | 'boolean' | 'file' | 'folder';
+
+export interface GeneratorWorkflowInput {
+  name: string;
+  type: GeneratorWorkflowInputType;
+  default?: unknown;
+  acceptedValues?: string[];
+}
+
+// Client-facing workflow configuration: the raw asset also carries a `file` name,
+// which is a server-side wiring detail and is never exposed.
+export interface GeneratorWorkflowConfig {
+  name: string;
+  description: string;
+  inputs: Record<string, GeneratorWorkflowInput>;
+}
+
+// Payload accepted by the generator endpoints: `workflow` selects the config entry,
+// `projectId` scopes the created job to one of the CALLER's projects (404 otherwise),
+// every other key is an input defined by that workflow's `inputs`.
+export interface GeneratorGenerationRequest {
+  projectId: string;
+  workflow: string;
+  [input: string]: unknown;
+}
+
+export type GeneratorJobType = 'video' | 'image';
+
+export interface GeneratorGenerationResult {
+  jobId: string;
+  projectId: string;
+  workflow: string;
+  status: 'processing';
+  comfyuiPromptId: string;
+}
+
+// Artifact produced by a ComfyUI prompt, persisted on the job's `output` JSON.
+export interface GeneratorArtifact {
+  name: string; // <jobId>.<ext>
+  type: 'image' | 'video' | 'audio';
+  mimeType: string;
+  // ComfyUI provenance (absent for export artifacts, which are stitched locally).
+  comfyFilename?: string;
+  comfyuiPromptId?: string;
+}
+
+export interface GeneratorJobStatusResult {
+  jobId: string;
+  // Owner + project scope. `userId` is the authorization anchor: only the owning
+  // user can query this status (404 for anyone else). Both are null on legacy jobs.
+  userId: string | null;
+  projectId: string | null;
+  status: 'not_started' | 'pending' | 'processing' | 'completed' | 'failed' | 'cancelled';
+  comfyuiPromptId: string | null;
+  error: string | null;
+  // `url` is the client-facing link (/artifact/<name>) served by a later endpoint.
+  artifact: (GeneratorArtifact & { url: string }) | null;
+}
+
+// Authentication & authorization (services/auth.ts, middleware/auth.ts).
+export type UserRole = 'admin' | 'user';
+
+// User as exposed by every endpoint: the password hash never leaves the service layer.
+export interface SafeUser {
+  id: string;
+  email: string;
+  username: string;
+  role: UserRole;
+  isActive: boolean;
+  lastLoginAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+// JWT claims (HS256). `sub` is the user id.
+export interface AuthTokenPayload {
+  sub: string;
+  email: string;
+  username: string;
+  role: UserRole;
+  iat?: number;
+  exp?: number;
+}
+
+export interface AuthResponse {
+  user: SafeUser;
+  token: string;
+}
+
+export interface RegisterRequest {
+  email: string;
+  username: string;
+  password: string;
+}
+
+// Login accepts a single `identifier` (email or username) or explicit fields.
+export interface LoginRequest {
+  identifier?: string;
+  email?: string;
+  username?: string;
+  password: string;
+}
+
+export interface CreateUserRequest {
+  email: string;
+  username: string;
+  password: string;
+  role?: UserRole;
+  isActive?: boolean;
+}
+
+// PATCH /api/users/:id — admin-only fields are rejected for non-admin callers.
+export interface UpdateUserRequest {
+  email?: string;
+  username?: string;
+  password?: string;
+  currentPassword?: string;
+  role?: UserRole;
+  isActive?: boolean;
+}
+
+export interface UserListFilters {
+  search?: string;
+  role?: UserRole;
+  isActive?: boolean;
+  limit: number;
+  offset: number;
+}
+
+// Result of one service reachability probe (GET /api/health/connection).
+export interface ServiceConnectionCheck {
+  service: 'omniroute' | 'comfyui';
+  // Human-facing role of the dependency: the LLM runtime and the render backend.
+  label: 'LLM' | 'ComfyUI';
+  // Base URL the probe was sent to (resolved from config).
+  endpoint: string;
+  // True when the server answered HTTP at all (any status code) — i.e. the
+  // service is reachable. A reachable-but-unhealthy service (e.g. an LLM router
+  // without a /health route, probe answered 404) is still `connected: true`
+  // with `status: 'unhealthy'` and `error` explaining the probe result.
+  connected: boolean;
+  status: 'healthy' | 'unhealthy';
+  latency: number;
+  error: string | null;
+  // ComfyUI only: the reported comfyui_version when reachable, else null.
+  version?: string | null;
+}
+
+// Aggregate response of GET /api/health/connection.
+export interface ServiceConnectionStatus {
+  llm: ServiceConnectionCheck;
+  comfyui: ServiceConnectionCheck;
+  allConnected: boolean;
+  checkedAt: string;
+}
+
+// Project as exposed by every endpoint (DB row with ISO date strings).
+export interface SafeProject {
+  id: string;
+  userId: string;
+  name: string;
+  description: string | null;
+  aspectRatio: string;
+  modelPreset: string;
+  status: 'active' | 'draft' | 'completed';
+  thumbnailUrl: string | null;
+  sceneCount: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateProjectRequest {
+  name: string;
+  description?: string | null;
+  aspectRatio?: string;
+  modelPreset?: string;
+  status?: 'active' | 'draft' | 'completed';
+}
+
+export interface UpdateProjectRequest {
+  name?: string;
+  description?: string | null;
+  aspectRatio?: string;
+  modelPreset?: string;
+  status?: 'active' | 'draft' | 'completed';
+  thumbnailUrl?: string;
+  sceneCount?: number;
+}
+
+export interface ProjectListFilters {
+  search?: string;
+  limit: number;
+  offset: number;
+}
+
 export * from './scriptframe.js';

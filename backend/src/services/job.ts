@@ -1,13 +1,13 @@
 import { db, schema } from '../db/index.js';
-import { eq, desc, and } from 'drizzle-orm';
+import { eq, desc, and, isNull, or } from 'drizzle-orm';
 import { v4 as uuidv4 } from 'uuid';
-import type { Job, NewJob, Asset, NewAsset, VideoGenerationJobInput, VideoGenerationJobOutput, JobProgressUpdate, ComfyUIWorkflow } from '../types/index.js';
+import type { Job, NewJob, Asset, NewAsset, VideoGenerationJobInput, VideoGenerationJobOutput, JobProgressUpdate, ComfyUIWorkflow, GeneratorArtifact } from '../types/index.js';
 import { omnirouteService } from './omniroute.js';
 import { comfyuiService } from './comfyui.js';
 import { config } from '../config/index.js';
 
 export class JobService {
-  async createJob(input: VideoGenerationJobInput): Promise<Job> {
+  async createJob(input: VideoGenerationJobInput, userId?: string): Promise<Job> {
     const jobId = uuidv4();
     const newJob: NewJob = {
       id: jobId,
@@ -15,6 +15,7 @@ export class JobService {
       status: 'pending',
       input: input as unknown as Record<string, unknown>,
       priority: 0,
+      userId: userId ?? null,
     };
 
     await db.insert(schema.jobs).values(newJob);
@@ -22,15 +23,90 @@ export class JobService {
     return job!;
   }
 
+  // Generic job creation for the generator endpoints (T2I/T2V/I2V) and export jobs.
+  // Unlike createJob this is not video-pipeline specific: the caller supplies the job
+  // type, status and the ComfyUI prompt id returned by /prompt. `id` lets the caller
+  // pre-generate the id so it can also be used as the ComfyUI client_id for
+  // correlation. `userId`/`projectId` anchor the ownership model: every NEW job must
+  // carry the creator's id (status queries authorize against it).
+  async createGenerationJob(params: {
+    type: Job['type'];
+    input: Record<string, unknown>;
+    id?: string;
+    status?: Job['status'];
+    comfyuiPromptId?: string | null;
+    userId?: string | null;
+    projectId?: string | null;
+  }): Promise<Job> {
+    const jobId = params.id ?? uuidv4();
+    const status = params.status ?? 'pending';
+    const newJob: NewJob = {
+      id: jobId,
+      type: params.type,
+      status,
+      input: params.input,
+      priority: 0,
+      comfyuiPromptId: params.comfyuiPromptId ?? null,
+      userId: params.userId ?? null,
+      projectId: params.projectId ?? null,
+      ...(status === 'processing' ? { startedAt: new Date() } : {}),
+    };
+
+    await db.insert(schema.jobs).values(newJob);
+    const [job] = await db.select().from(schema.jobs).where(eq(schema.jobs.id, jobId));
+    return job!;
+  }
+
+  /**
+   * Persist the artifact fetched for a generator job and mark it completed in a single
+   * update. Written as one statement because updateJobStatus() replaces `output` with
+   * `{ message }` whenever a message is supplied, which would wipe the artifact.
+   */
+  async setJobArtifact(jobId: string, artifact: GeneratorArtifact): Promise<Job | null> {
+    await db
+      .update(schema.jobs)
+      .set({
+        output: { artifact } as unknown as Record<string, unknown>,
+        status: 'completed',
+        progress: 100,
+        error: null,
+        completedAt: new Date(),
+        updatedAt: new Date(),
+      })
+      .where(eq(schema.jobs.id, jobId));
+    return this.getJob(jobId);
+  }
+
   async getJob(jobId: string): Promise<Job | null> {
     const [job] = await db.select().from(schema.jobs).where(eq(schema.jobs.id, jobId));
     return job ?? null;
   }
 
-  async getJobs(filters?: { status?: Job['status']; limit?: number; offset?: number }): Promise<Job[]> {
+  async getJobs(filters?: {
+    status?: Job['status'];
+    limit?: number;
+    offset?: number;
+    // Owner scoping: when set, only jobs created by this user are returned.
+    userId?: string;
+    // Project scoping: when set, only jobs belonging to this project are returned.
+    projectId?: string;
+    // Admin list scope: also include legacy rows (user_id NULL, created before
+    // user scoping) so old data is not orphaned.
+    includeUnowned?: boolean;
+  }): Promise<Job[]> {
     const conditions = [];
     if (filters?.status) {
       conditions.push(eq(schema.jobs.status, filters.status));
+    }
+    if (filters?.projectId) {
+      conditions.push(eq(schema.jobs.projectId, filters.projectId));
+    }
+    if (filters?.userId) {
+      conditions.push(
+        filters.includeUnowned
+          ? or(eq(schema.jobs.userId, filters.userId), isNull(schema.jobs.userId))
+          : eq(schema.jobs.userId, filters.userId)
+      );
     }
 
     const query = db.select().from(schema.jobs);
@@ -224,6 +300,8 @@ export class JobService {
     await this.updateJobStatus(jobId, { jobId, progress: 0, status: 'cancelled', message: 'Job cancelled by user' });
   }
 
+  // Deletes only the job row. Artifacts on disk are intentionally kept forever and
+  // stay served by GET /artifact/:name, so this never removes generated media.
   async deleteJob(jobId: string): Promise<void> {
     await db.delete(schema.jobs).where(eq(schema.jobs.id, jobId));
   }

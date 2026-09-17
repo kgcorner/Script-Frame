@@ -1,8 +1,17 @@
 import 'dotenv/config';
 
+const nodeEnv = process.env.NODE_ENV || 'development';
+
+// JWT secret: REQUIRED in production (the server fail-fasts without it, see index.ts).
+// In development a well-known fallback keeps local boot friction-free; tokens are still
+// signed/verified, they just reset whenever the fallback changes.
+const jwtSecret =
+  process.env.JWT_SECRET ||
+  (nodeEnv === 'production' ? '' : 'video-generator-dev-only-jwt-secret-change-me');
+
 export const config = {
   port: parseInt(process.env.PORT || '3000', 10),
-  nodeEnv: process.env.NODE_ENV || 'development',
+  nodeEnv,
 
   db: {
     path: process.env.DB_PATH || './data/video-generator.db',
@@ -37,6 +46,11 @@ export const config = {
     ffprobePath: process.env.FFPROBE_PATH || 'ffprobe',
   },
 
+  // Generator endpoints (T2I/T2V/I2V): where fetched ComfyUI artifacts are stored.
+  generator: {
+    assetsPath: process.env.GENERATOR_ASSETS_PATH || './data/assets',
+  },
+
   llm: {
     // Wall-clock cap for a single LLM completion (story/clip planning can be slow).
     completionTimeout: parseInt(process.env.LLM_COMPLETION_TIMEOUT || '180000', 10),
@@ -44,6 +58,21 @@ export const config = {
 
   cors: {
     origin: process.env.CORS_ORIGIN || '*',
+  },
+
+  // Authentication & authorization (services/auth.ts, middleware/auth.ts).
+  auth: {
+    jwtSecret,
+    // Token lifetime. Accepts '30m' | '12h' | '7d' | plain seconds ('3600').
+    jwtExpiresIn: process.env.JWT_EXPIRES_IN || '24h',
+    // bcrypt cost factor for password hashing.
+    bcryptRounds: parseInt(process.env.BCRYPT_ROUNDS || '10', 10),
+    // Optional bootstrap admin: when set and the users table is empty, initDb()
+    // seeds this account so the instance can be administered without public
+    // registration (the first public registrant also becomes admin as a fallback).
+    adminEmail: process.env.ADMIN_EMAIL || '',
+    adminUsername: process.env.ADMIN_USERNAME || 'admin',
+    adminPassword: process.env.ADMIN_PASSWORD || '',
   },
 };
 

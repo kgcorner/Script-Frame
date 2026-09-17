@@ -47,6 +47,19 @@ export class HealthController {
     }
   }
 
+  // GET /api/health/connection — live reachability probe of the LLM service and
+  // ComfyUI. Always answers 200: a down dependency is part of the payload
+  // (connected: false + error), not an HTTP error, so clients can render status
+  // without error handling. No health history is recorded (cheap to poll).
+  async checkConnection(_req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const status = await healthService.checkConnections();
+      res.json({ success: true, data: status });
+    } catch (error) {
+      next(error);
+    }
+  }
+
   async getHealthHistory(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const { service, limit } = req.query;

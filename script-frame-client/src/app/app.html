@@ -1,15 +1,153 @@
-<header class="topbar">
-  <div class="brand-block">
-    <svg class="brand-icon" viewBox="0 0 24 24" width="28" height="28" fill="var(--primary)" aria-hidden="true"><path d="M13.5,5.5c1.38,0 2.5,1.12 2.5,2.5s-1.12,2.5-2.5,2.5S11,9.38,11,8s1.12-2.5,2.5-2.5M19.5,12c0,0-1.5,4.5-6,7c-0.5,0.25-0.5,0.75-0.25,1.13L15.8,21l-3.1,0.9c-0.4,0.12-0.8-0.3-0.7-0.73 l0.6-3.4c-2.5-1.1-4.1-3.3-4.1-5.8 0-3.3,2.7-6,6-6 3.3,0,6,2.7,6,6"/></svg>
-    <div>
-      <span class="brand">Project Alpha</span>
-      <span class="version">V0.4 Draft</span>
-    </div>
-  </div>
-  <nav class="top-nav" aria-label="Primary">
-    <a routerLink="/workflows" routerLinkActive="active" class="top-link">Workflows</a>
-    <a routerLink="/runs/new" routerLinkActive="active" class="top-link">New Run</a>
-  </nav>
-</header>
+<div class="w-full min-h-screen bg-background text-on-surface flex flex-col">
+  @if (!isAuthRoute()) {
+    <!-- MOBILE HEADER (Visible on screens < 1024px) -->
+    <header class="block lg:hidden fixed top-0 w-full z-40 pt-safe bg-background/70 backdrop-blur-2xl border-b border-white/[0.04]">
+      <div class="h-16 px-6 flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <img
+            alt="Scriptframe Logo"
+            class="h-7 w-auto object-contain opacity-95"
+            src="/assets/x-small-logo.png"
+          />
+          <div class="flex items-center gap-2">
+            <span class="font-headline-sm font-semibold tracking-tight text-white text-[17px]"></span>
+            <span class="px-1.5 py-0.5 rounded text-[9px] font-label-xs font-semibold tracking-wider uppercase bg-primary/15 text-primary border border-primary/20">PRO</span>
+          </div>
+        </div>
+        <div class="flex items-center gap-3">
+          <div class="flex items-center gap-2" [title]="healthService.comfyUiStatus()?.error || (healthService.isHealthy() ? 'ComfyUI Connected' : 'ComfyUI Disconnected')">
+            <span
+              class="inline-block w-1.5 h-1.5 rounded-full transition-colors duration-300"
+              [class.bg-emerald-400]="healthService.isHealthy()"
+              [class.bg-rose-500]="!healthService.isHealthy()"
+            ></span>
+            <span
+              class="font-label-xs text-[10px] font-medium tracking-wide uppercase transition-colors duration-300"
+              [class.text-on-surface-variant]="healthService.isHealthy()"
+              [class.text-rose-400]="!healthService.isHealthy()"
+            >{{ healthService.statusText() }}</span>
+          </div>
+          <button
+            type="button"
+            (click)="logout()"
+            aria-label="Sign out"
+            title="Sign out"
+            class="p-1.5 rounded-full text-on-surface-variant hover:text-error hover:bg-error/10 transition-colors flex items-center justify-center"
+          >
+            <span class="material-symbols-outlined text-[20px]">logout</span>
+          </button>
+        </div>
+      </div>
+    </header>
 
-<router-outlet />
+    <!-- DESKTOP HEADER (Visible on screens >= 1024px) -->
+    <header class="hidden lg:block fixed top-0 left-0 right-0 z-50 bg-surface/80 backdrop-blur-xl shadow-[0_1px_8px_rgba(0,0,0,0.04)]">
+      <div class="h-16 w-full px-gutter-tablet flex items-center justify-between gap-space-md">
+        <div class="flex items-center gap-space-lg">
+          <div class="flex items-center gap-space-sm">
+            <img
+              alt="Brand logo"
+              class="h-8 w-auto object-contain"
+              src="https://lh3.googleusercontent.com/aida/AEtjO1WthTY7YhdKHinD8AngildA7NzbfFbUmYNXbpjro6Sh4g_2pw9j5K-5fC7DGvUC2S7nfT_fCEr-ClLLDLtcw6wpCk8dH8FM98tZAfiVTYL4Fl85Xm8PnyP4qnLk6sdbEB4SPFFZ3lYbgYz5zsNl2fZuGdvMAJPIn7hBFnC57wCmWbCQ-oak0cwhaIGbOOThFoX85cnPUrsNYJTMvEGlEn3Tt_KxGukNrlFPIxTBdJWqpV9UG8hhz24F3g4"
+            />
+            <span class="font-headline-sm text-headline-sm text-on-surface tracking-tight">
+              <span class="text-secondary font-label-xs text-label-xs uppercase ml-space-xs px-space-xs py-0.5 rounded bg-surface-container-high">PRO</span>
+            </span>
+          </div>
+          <div class="h-4 w-[1px] bg-surface-variant hidden md:block"></div>
+          <nav class="flex items-center gap-space-xs bg-surface-container-lowest p-space-xs rounded-xl">
+            <a routerLink="/projects" routerLinkActive="bg-primary-container text-on-primary-container font-label-md text-label-md rounded-lg shadow-[0_0_12px_rgba(160,120,255,0.25)]" class="px-space-md py-1.5 rounded-lg text-on-surface-variant font-label-md text-label-md transition-colors hover:text-on-surface">Projects</a>
+            <a routerLink="/workflows" routerLinkActive="bg-primary-container text-on-primary-container font-label-md text-label-md rounded-lg shadow-[0_0_12px_rgba(160,120,255,0.25)]" class="px-space-md py-1.5 rounded-lg text-on-surface-variant font-label-md text-label-md transition-colors hover:text-on-surface">Cine</a>
+            <a routerLink="/runs/new" routerLinkActive="bg-primary-container text-on-primary-container font-label-md text-label-md rounded-lg shadow-[0_0_12px_rgba(160,120,255,0.25)]" class="px-space-md py-1.5 rounded-lg text-on-surface-variant font-label-md text-label-md transition-colors hover:text-on-surface">Gallery</a>
+          </nav>
+        </div>
+
+        <div class="flex items-center gap-space-md">
+          <div
+            class="hidden xl:flex items-center gap-space-xs bg-surface-container-lowest px-space-md py-1.5 rounded-full transition-all duration-300"
+            [title]="healthService.comfyUiStatus()?.error || (healthService.isHealthy() ? 'ComfyUI Connected' : 'ComfyUI Disconnected')"
+          >
+            <span
+              class="w-2 h-2 rounded-full transition-colors duration-300"
+              [class.bg-secondary]="healthService.isHealthy()"
+              [class.animate-pulse]="healthService.isHealthy()"
+              [class.bg-rose-500]="!healthService.isHealthy()"
+            ></span>
+            <span
+              class="font-label-xs text-label-xs uppercase tracking-widest transition-colors duration-300"
+              [class.text-secondary]="healthService.isHealthy()"
+              [class.text-rose-400]="!healthService.isHealthy()"
+            >{{ healthService.statusText() }}</span>
+          </div>
+          <div class="hidden lg:flex items-center gap-space-sm bg-surface-container-low px-space-md py-1.5 rounded-lg">
+            <span class="material-symbols-outlined text-secondary text-[16px]">motion_photos_on</span>
+            <span class="font-label-sm text-label-sm text-on-surface-variant">Queue:</span>
+            <span class="font-label-sm text-label-sm text-on-surface font-semibold">2 Active</span>
+            <span class="font-label-xs text-label-xs text-outline">/ 60fps</span>
+          </div>
+          <div class="flex items-center gap-space-xs">
+            <button aria-label="Telemetry Monitor" class="p-2 rounded-lg bg-surface-container-low text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors flex items-center justify-center">
+              <span class="material-symbols-outlined text-[20px]">tune</span>
+            </button>
+            <button aria-label="Global Notifications" class="p-2 rounded-lg bg-surface-container-low text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors flex items-center justify-center">
+              <span class="material-symbols-outlined text-[20px]">notifications</span>
+            </button>
+            <button
+              type="button"
+              (click)="logout()"
+              aria-label="Sign out"
+              title="Sign out"
+              class="p-2 rounded-lg bg-surface-container-low text-on-surface-variant hover:bg-error/15 hover:text-error transition-colors flex items-center justify-center"
+            >
+              <span class="material-symbols-outlined text-[20px]">logout</span>
+            </button>
+          </div>
+          <div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center">
+            <span class="material-symbols-outlined text-on-primary text-[18px]">person</span>
+          </div>
+        </div>
+      </div>
+    </header>
+  }
+
+  <!-- SINGLE ROUTER OUTLET FOR ACTIVE ROUTE COMPONENT -->
+  <main class="flex-1 w-full">
+    <router-outlet />
+  </main>
+
+  @if (!isAuthRoute()) {
+    <!-- MOBILE BOTTOM NAVIGATION (Visible on screens < 1024px) -->
+    <nav class="block lg:hidden fixed bottom-0 w-full z-40 pb-safe bg-background/85 backdrop-blur-2xl border-t border-white/[0.04]">
+      <div class="flex items-center justify-around h-16 max-w-xl mx-auto px-4">
+        <a routerLink="/projects" routerLinkActive="text-primary" class="flex flex-col items-center justify-center gap-1 min-w-[48px] text-on-surface-variant hover:text-white transition-colors">
+          <span class="material-symbols-outlined text-[20px]">folder_open</span>
+          <span class="font-label-xs text-[10px] tracking-wide">Projects</span>
+        </a>
+        <a routerLink="/workflows" routerLinkActive="text-primary" class="flex flex-col items-center justify-center gap-1 min-w-[48px] text-on-surface-variant hover:text-white transition-colors">
+          <span class="material-symbols-outlined text-[20px]">movie</span>
+          <span class="font-label-xs text-[10px] tracking-wide">Cine</span>
+        </a>
+        <a routerLink="/runs/new" routerLinkActive="text-primary" class="flex flex-col items-center justify-center gap-1 min-w-[48px] text-on-surface-variant hover:text-white transition-colors">
+          <span class="material-symbols-outlined text-[20px]">video_library</span>
+          <span class="font-label-xs text-[10px] tracking-wide">Gallery</span>
+        </a>
+      </div>
+    </nav>
+
+    <!-- DESKTOP FOOTER (Visible on screens >= 1024px) -->
+    <footer class="hidden lg:block w-full bg-surface-container-lowest py-space-md mt-auto shadow-[0_1px_8px_rgba(0,0,0,0.04)]">
+      <div class="w-full px-gutter-tablet flex flex-col md:flex-row items-center justify-between gap-space-sm">
+        <div class="flex items-center gap-space-md">
+          <span class="font-label-xs text-label-xs uppercase text-outline"> Studio Suite</span>
+          <span class="text-surface-variant font-label-xs text-label-xs">•</span>
+          <span class="font-label-xs text-label-xs text-on-surface-variant">Cluster: US-West-H100</span>
+          <span class="text-surface-variant font-label-xs text-label-xs">•</span>
+          <span class="font-label-xs text-label-xs text-on-surface-variant">Latency: 14ms</span>
+        </div>
+        <div class="flex items-center gap-space-lg">
+          <span class="font-label-xs text-label-xs text-outline">© 2025  Pro. All rights reserved.</span>
+        </div>
+      </div>
+    </footer>
+  }
+</div>

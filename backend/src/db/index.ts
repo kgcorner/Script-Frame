@@ -6,6 +6,8 @@ import { mkdirSync } from 'fs';
 import { dirname } from 'path';
 import { fileURLToPath } from 'url';
 import { sql } from 'drizzle-orm';
+import { v4 as uuidv4 } from 'uuid';
+import { hashPassword } from '../services/auth.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -23,8 +25,8 @@ export async function initDb() {
   await db.run(sql`
     CREATE TABLE IF NOT EXISTS jobs (
       id TEXT PRIMARY KEY,
-      type TEXT NOT NULL CHECK (type IN ('video', 'image', 'audio')),
-      status TEXT NOT NULL CHECK (status IN ('pending', 'processing', 'completed', 'failed', 'cancelled')) DEFAULT 'pending',
+      type TEXT NOT NULL CHECK (type IN ('video', 'image', 'audio', 'export')),
+      status TEXT NOT NULL CHECK (status IN ('not_started', 'pending', 'processing', 'completed', 'failed', 'cancelled')) DEFAULT 'pending',
       input TEXT NOT NULL,
       output TEXT,
       error TEXT,
@@ -36,6 +38,13 @@ export async function initDb() {
       completed_at INTEGER
     )
   `);
+
+  // jobs.comfyui_prompt_id links a generator job (T2I/T2V/I2V) to the ComfyUI prompt
+  // fulfilling it. Added via ALTER so pre-existing databases pick the column up.
+  const jobColumns = db.$client.prepare('PRAGMA table_info(jobs)').all() as Array<{ name: string }>;
+  if (!jobColumns.some((c) => c.name === 'comfyui_prompt_id')) {
+    await db.run(sql`ALTER TABLE jobs ADD COLUMN comfyui_prompt_id TEXT`);
+  }
 
   await db.run(sql`
     CREATE TABLE IF NOT EXISTS assets (
@@ -202,6 +211,40 @@ export async function initDb() {
       PRIMARY KEY (stack_id, app_id)
     )
   `);
+
+  // Users: authentication + authorization (role-based). Emails are stored lower-cased
+  // and the UNIQUE constraints double as lookup indexes.
+  await db.run(sql`
+    CREATE TABLE IF NOT EXISTS users (
+      id TEXT PRIMARY KEY,
+      email TEXT NOT NULL UNIQUE COLLATE NOCASE,
+      username TEXT NOT NULL UNIQUE,
+      password_hash TEXT NOT NULL,
+      role TEXT NOT NULL DEFAULT 'user' CHECK (role IN ('admin', 'user')),
+      is_active INTEGER NOT NULL DEFAULT 1,
+      last_login_at INTEGER,
+      created_at INTEGER NOT NULL DEFAULT (unixepoch()),
+      updated_at INTEGER NOT NULL DEFAULT (unixepoch())
+    )
+  `);
+
+  // Projects: user-owned containers for generation jobs. Must be created AFTER
+  // users (FK); deleting a user cascades to their projects.
+  await db.run(sql`
+    CREATE TABLE IF NOT EXISTS projects (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      name TEXT NOT NULL,
+      description TEXT,
+      aspect_ratio TEXT NOT NULL DEFAULT '16:9',
+      model_preset TEXT NOT NULL DEFAULT 'default',
+      status TEXT NOT NULL DEFAULT 'active' CHECK (status IN ('active', 'draft', 'completed')),
+      thumbnail_url TEXT,
+      scene_count INTEGER NOT NULL DEFAULT 0,
+      created_at TEXT NOT NULL,
+      updated_at TEXT NOT NULL
+    )
+  `);
   // --- Migrations for the video-generation pipeline ---
   // assets.jobId is now nullable (final stitched videos belong to a story job, not a
   // generic job) and assets.storyJobId links the final video to its story run.
@@ -237,6 +280,42 @@ export async function initDb() {
     `);
   }
 
+  // Projects migration: backfill new columns on pre-existing databases. On a fresh
+  // database the CREATE TABLE IF NOT EXISTS above already has the new shape, so this
+  // block is a no-op there (PRAGMA table_info will report the new columns). On older
+  // databases we rebuild the table and convert the old integer `created_at`/`updated_at`
+  // (unixepoch) values to ISO-8601 text to match the current schema.
+  const projectColumns = db.$client.prepare('PRAGMA table_info(projects)').all() as Array<{ name: string; notnull: number; pk: number }>;
+  const hasAspectRatio = projectColumns.some((c) => c.name === 'aspect_ratio');
+  const needsProjectMigration = !hasAspectRatio;
+  if (needsProjectMigration) {
+    db.$client.exec(`
+      BEGIN;
+      CREATE TABLE projects_new (
+        id TEXT PRIMARY KEY,
+        user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        name TEXT NOT NULL,
+        description TEXT,
+        aspect_ratio TEXT NOT NULL DEFAULT '16:9',
+        model_preset TEXT NOT NULL DEFAULT 'default',
+        status TEXT NOT NULL DEFAULT 'active' CHECK (status IN ('active', 'draft', 'completed')),
+        thumbnail_url TEXT,
+        scene_count INTEGER NOT NULL DEFAULT 0,
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL
+      );
+      INSERT INTO projects_new (id, user_id, name, description, aspect_ratio, model_preset, status, thumbnail_url, scene_count, created_at, updated_at)
+        SELECT id, user_id, name, description, '16:9', 'default', 'active', NULL, 0,
+          datetime(created_at, 'unixepoch'),
+          datetime(updated_at, 'unixepoch')
+        FROM projects;
+      DROP TABLE projects;
+      ALTER TABLE projects_new RENAME TO projects;
+      CREATE INDEX IF NOT EXISTS idx_projects_user_id ON projects(user_id);
+      COMMIT;
+    `);
+  }
+
   await db.run(sql`
     CREATE INDEX IF NOT EXISTS idx_comfyui_stack_apps_stack_id ON comfyui_stack_apps(stack_id)
   `);
@@ -255,6 +334,9 @@ export async function initDb() {
   `);
   await db.run(sql`
     CREATE INDEX IF NOT EXISTS idx_service_health_service ON service_health(service)
+  `);
+  await db.run(sql`
+    CREATE INDEX IF NOT EXISTS idx_projects_user_id ON projects(user_id)
   `);
   await db.run(sql`
     CREATE INDEX IF NOT EXISTS idx_comfyui_apps_workflow_id ON comfyui_apps(workflow_id)
@@ -381,9 +463,93 @@ export async function initDb() {
     `);
   }
 
+  // 4) llm_apps.endpoint / api_key: per-app base URL override so a custom endpoint (or a post-create
+    // provider edit) is honoured by fetchModels / testConnection instead of the provider row.
+  const appColumns2 = db.$client.prepare('PRAGMA table_info(llm_apps)').all() as Array<{ name: string }>;
+  if (!appColumns2.some((c) => c.name === 'endpoint')) {
+    await db.run(sql`ALTER TABLE llm_apps ADD COLUMN endpoint TEXT`);
+  }
+  if (!appColumns2.some((c) => c.name === 'api_key')) {
+    await db.run(sql`ALTER TABLE llm_apps ADD COLUMN api_key TEXT`);
+  }
+
+  // 5) jobs.type / jobs.status CHECK constraints: video export jobs (services/export.ts)
+  //    store type 'export' and status 'not_started'. SQLite can't ALTER a CHECK, so the
+  //    table is rebuilt when the existing constraints predate those values. foreign_keys
+  //    must be off for the rebuild: dropping the parent `jobs` table would otherwise
+  //    cascade-delete every referencing `assets` row.
+  const jobsTableSql =
+    ((db.$client.prepare("SELECT sql FROM sqlite_master WHERE type = 'table' AND name = 'jobs'").get() ??
+      {}) as { sql?: string }).sql ?? '';
+  if (jobsTableSql && (!jobsTableSql.includes("'export'") || !jobsTableSql.includes("'not_started'"))) {
+    db.$client.pragma('foreign_keys = OFF');
+    try {
+      db.$client.exec(`
+        BEGIN;
+        CREATE TABLE jobs_new (
+          id TEXT PRIMARY KEY,
+          type TEXT NOT NULL CHECK (type IN ('video', 'image', 'audio', 'export')),
+          status TEXT NOT NULL CHECK (status IN ('not_started', 'pending', 'processing', 'completed', 'failed', 'cancelled')) DEFAULT 'pending',
+          input TEXT NOT NULL,
+          output TEXT,
+          error TEXT,
+          progress REAL NOT NULL DEFAULT 0,
+          priority INTEGER NOT NULL DEFAULT 0,
+          created_at INTEGER NOT NULL DEFAULT (unixepoch()),
+          updated_at INTEGER NOT NULL DEFAULT (unixepoch()),
+          started_at INTEGER,
+          completed_at INTEGER,
+          comfyui_prompt_id TEXT
+        );
+        INSERT INTO jobs_new (id, type, status, input, output, error, progress, priority, created_at, updated_at, started_at, completed_at, comfyui_prompt_id)
+          SELECT id, type, status, input, output, error, progress, priority, created_at, updated_at, started_at, completed_at, comfyui_prompt_id FROM jobs;
+        DROP TABLE jobs;
+        ALTER TABLE jobs_new RENAME TO jobs;
+        CREATE INDEX IF NOT EXISTS idx_jobs_status ON jobs(status);
+        CREATE INDEX IF NOT EXISTS idx_jobs_created_at ON jobs(created_at);
+        COMMIT;
+      `);
+    } finally {
+      db.$client.pragma('foreign_keys = ON');
+    }
+  }
+
+  // --- Migrations for user/project scoping of jobs ---
+  // jobs.user_id / jobs.project_id: added after multi-user auth. Must run AFTER the
+  // jobs table rebuild above (a rebuild would drop columns added before it). Legacy
+  // rows keep user_id NULL -> visible to admins only. A user's jobs die with the
+  // user; a job survives its project being deleted (project_id -> NULL).
+  const jobScopingColumns = db.$client.prepare('PRAGMA table_info(jobs)').all() as Array<{ name: string }>;
+  if (!jobScopingColumns.some((c) => c.name === 'user_id')) {
+    await db.run(sql`ALTER TABLE jobs ADD COLUMN user_id TEXT REFERENCES users(id) ON DELETE CASCADE`);
+  }
+  if (!jobScopingColumns.some((c) => c.name === 'project_id')) {
+    await db.run(sql`ALTER TABLE jobs ADD COLUMN project_id TEXT REFERENCES projects(id) ON DELETE SET NULL`);
+  }
+  await db.run(sql`CREATE INDEX IF NOT EXISTS idx_jobs_user_id ON jobs(user_id)`);
+  await db.run(sql`CREATE INDEX IF NOT EXISTS idx_jobs_project_id ON jobs(project_id)`);
+
+  // --- Auth bootstrap ---
+  // Seed the first admin from ADMIN_EMAIL/ADMIN_PASSWORD when the users table is
+  // empty, so an instance can be administered without going through public
+  // registration. Without these env vars the first public registrant becomes admin.
+  const [{ userCount }] = await db
+    .select({ userCount: sql<number>`count(*)` })
+    .from(schema.users);
+  if (userCount === 0 && config.auth.adminEmail && config.auth.adminPassword) {
+    await db.insert(schema.users).values({
+      id: uuidv4(),
+      email: config.auth.adminEmail.trim().toLowerCase(),
+      username: config.auth.adminUsername || 'admin',
+      passwordHash: await hashPassword(config.auth.adminPassword),
+      role: 'admin',
+      isActive: true,
+    });
+    console.log(`Seeded bootstrap admin user: ${config.auth.adminEmail}`);
+  }
 }
 
 
 export { schema };
 
-export type { Job, NewJob, Asset, NewAsset, Workflow, NewWorkflow, ServiceHealth, NewServiceHealth, ComfyUIApp, NewComfyUIApp, LLMProvider, NewLLMProvider, LLMApp, NewLLMApp, ScriptFrameWorkflowRecord, NewScriptFrameWorkflowRecord, ComfyUIStack, NewComfyUIStack, ComfyUIStackApp, NewComfyUIStackApp, StoryGenerationJob, NewStoryGenerationJob, VideoGenerationJob, NewVideoGenerationJob } from './schema.js';
+export type { Job, NewJob, Asset, NewAsset, Workflow, NewWorkflow, ServiceHealth, NewServiceHealth, ComfyUIApp, NewComfyUIApp, LLMProvider, NewLLMProvider, LLMApp, NewLLMApp, ScriptFrameWorkflowRecord, NewScriptFrameWorkflowRecord, ComfyUIStack, NewComfyUIStack, ComfyUIStackApp, NewComfyUIStackApp, StoryGenerationJob, NewStoryGenerationJob, VideoGenerationJob, NewVideoGenerationJob, User, NewUser, Project, NewProject } from './schema.js';

@@ -13,7 +13,9 @@ export class ApiClient {
   }
 
   protected request<T>(path: string, method = 'GET', body?: unknown): Observable<T> {
-    const url = `${this.baseUrl}${path}`;
+    const cleanPath = path.startsWith('/api/') ? path.substring(4) : path;
+    const pathWithLeadingSlash = cleanPath.startsWith('/') ? cleanPath : `/${cleanPath}`;
+    const url = `${this.baseUrl}${pathWithLeadingSlash}`;
     return this.http.request<T>(method as any, url, { body });
   }
 

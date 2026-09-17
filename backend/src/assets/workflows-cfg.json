@@ -1,0 +1,154 @@
+[
+    {
+        "name": "I2V-LTX",
+        "description": "Image to Video LTX",
+        "file": "I2V-LTX.json",
+        "inputs": {
+            "aspect_ratio": {
+                "name": "Aspect Ratio",
+                "type": "string",
+                "default": "16:9 (Widescreen)",
+                "acceptedValues": ["16:9 (Widescreen)", "1:1 (Square)", "9:16 (Portrait Widescreen)", "2:3 (Potrait Photo)", "3:2 (Photo)", "4:5 (Portrait Instagram)", "4:5 (Landscape Instagram)", "21:9 (Cinemascope)"]
+            },
+            "mp": {
+                "name": "Megapixels",
+                "type": "float",
+                "default": 0.9
+            },
+            "duration": {
+                "name": "Duration",
+                "type": "float",
+                "default": 5
+            },
+            "prompt": {
+                "name": "Prompt",
+                "type":"string",
+                "default":""
+            },
+            "image": {
+                "name": "Image",
+                "type": "file"
+            }
+        }
+    },
+    {
+        "name": "I2V-minimax",
+        "description": "Image to Video MiniMax",
+        "file": "I2V-minimax.json",
+        "inputs": {
+            "aspect_ratio": {
+                "name": "Aspect Ratio",
+                "type": "string",
+                "default": "16:9 (Widescreen)",
+                "acceptedValues": ["16:9 (Widescreen)", "1:1 (Square)", "9:16 (Portrait Widescreen)", "2:3 (Potrait Photo)", "3:2 (Photo)", "4:5 (Portrait Instagram)", "4:5 (Landscape Instagram)", "21:9 (Cinemascope)"]
+            },
+            "mp": {
+                "name": "Megapixels",
+                "type": "float",
+                "default": 0.9
+            },
+            "duration": {
+                "name": "Duration",
+                "type": "float",
+                "default": 5
+            },
+            "prompt": {
+                "name": "Prompt",
+                "type": "string",
+                "default": ""
+            },
+            "image": {
+                "name": "Image",
+                "type": "file"
+            },
+            "fast": {
+                "name": "Fast",
+                "type": "boolean",
+                "default": false
+            }
+        }
+    },
+    {
+        "name": "T2I-Flux",
+        "description": "Text to Image Flux",
+        "file": "T2I-Flux.json",
+        "inputs": {
+            "width": {
+                "name": "Width",
+                "type": "integer",
+                "default": 1024
+            },
+            "height": {
+                "name": "Height",
+                "type": "integer",
+                "default": 1024
+            },
+            "prompt": {
+                "name": "Prompt",
+                "type": "string",
+                "default": ""
+            }
+        }
+    },
+    {
+        "name": "T2V-LTX",
+        "description": "Text to Video LTX",
+        "file": "T2V-LTX.json",
+        "inputs": {
+            "aspect_ratio": {
+                "name": "Aspect Ratio",
+                "type": "string",
+                "default": "16:9 (Widescreen)",
+                "acceptedValues": ["16:9 (Widescreen)", "1:1 (Square)", "9:16 (Portrait Widescreen)", "2:3 (Potrait Photo)", "3:2 (Photo)", "4:5 (Portrait Instagram)", "4:5 (Landscape Instagram)", "21:9 (Cinemascope)"]
+            },
+            "mp": {
+                "name": "Megapixels",
+                "type": "float",
+                "default": 0.9
+            },
+            "duration": {
+                "name": "Duration",
+                "type": "float",
+                "default": 5
+            },
+            "prompt": {
+                "name": "Prompt",
+                "type": "string",
+                "default": ""
+            }
+        }
+    },
+    {
+        "name": "T2V-minimax",
+        "description": "Text to Video MiniMax",
+        "file": "T2V-minimax.json",
+        "inputs": {
+            "aspect_ratio": {
+                "name": "Aspect Ratio",
+                "type": "string",
+                "default": "16:9 (Widescreen)",
+                "acceptedValues": ["16:9 (Widescreen)", "1:1 (Square)", "9:16 (Portrait Widescreen)", "2:3 (Potrait Photo)", "3:2 (Photo)", "4:5 (Portrait Instagram)", "4:5 (Landscape Instagram)", "21:9 (Cinemascope)"]
+            },
+            "mp": {
+                "name": "Megapixels",
+                "type": "float",
+                "default": 0.9
+            },
+            "duration": {
+                "name": "Duration",
+                "type": "float",
+                "default": 5
+            },
+            "prompt": {
+                "name": "Prompt",
+                "type": "string",
+                "default": ""
+            },
+            "fast": {
+                "name": "Fast",
+                "type": "boolean",
+                "default": false
+            }
+        }
+    }
+]

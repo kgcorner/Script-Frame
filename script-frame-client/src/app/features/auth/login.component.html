@@ -1,0 +1,100 @@
+<div class="min-h-screen w-full bg-background flex flex-col justify-center items-center px-4 py-12 relative overflow-hidden selection:bg-primary/20">
+  
+  <!-- Subtle ambient glow background overlays -->
+  <div class="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-primary/10 rounded-full blur-[120px] pointer-events-none"></div>
+  <div class="absolute bottom-10 right-10 w-[350px] h-[350px] bg-secondary/10 rounded-full blur-[100px] pointer-events-none"></div>
+
+  <!-- Main Auth Card Container -->
+  <div class="w-full max-w-md bg-surface-container/80 backdrop-blur-2xl rounded-3xl border border-white/[0.08] p-8 shadow-2xl relative z-10 space-y-8">
+    
+    <!-- Brand Header -->
+    <div class="flex flex-col items-center text-center space-y-3">
+      <div class="flex items-center justify-center gap-3">
+        <img
+          alt="CineForge AI Logo"
+          class="h-9 w-auto object-contain"
+          src="/assets/x-small-logo.png"
+        />
+        <div class="flex items-center gap-2">
+          
+          <span class="px-2 py-0.5 rounded text-[10px] font-label-xs font-semibold tracking-wider uppercase bg-primary/15 text-primary border border-primary/30">PRO</span>
+        </div>
+      </div>
+      <p class="text-body-md text-on-surface-variant text-[14px]">Sign in to access your AI Video Workstation</p>
+    </div>
+
+    <!-- Error Banner -->
+    @if (errorMessage()) {
+      <div class="p-3.5 rounded-2xl bg-error/15 border border-error/30 text-error font-body-sm text-[13px] flex items-center gap-2.5 animate-fadeIn">
+        <span class="material-symbols-outlined text-[18px]">error</span>
+        <span>{{ errorMessage() }}</span>
+      </div>
+    }
+
+    <!-- Form -->
+    <form (submit)="onSubmit(); $event.preventDefault();" class="space-y-5">
+      <!-- Username or Email Field -->
+      <div class="space-y-1.5">
+        <label class="block text-[12px] font-label-sm uppercase tracking-wider text-on-surface-variant font-medium">Username or Email</label>
+        <div class="relative flex items-center">
+          <span class="material-symbols-outlined absolute left-3.5 text-on-surface-variant text-[20px] pointer-events-none">person</span>
+          <input
+            type="text"
+            [value]="identifier()"
+            (input)="identifier.set($any($event.target).value)"
+            placeholder="Enter your username or email"
+            required
+            class="w-full pl-11 pr-4 py-3 rounded-2xl bg-surface-container-lowest text-white font-body-md text-[14px] border border-white/[0.08] focus:border-primary/50 focus:bg-surface-container-high focus:outline-none transition-all placeholder-on-surface-variant/50"
+          />
+        </div>
+      </div>
+
+      <!-- Password Field -->
+      <div class="space-y-1.5">
+        <label class="block text-[12px] font-label-sm uppercase tracking-wider text-on-surface-variant font-medium">Password</label>
+        <div class="relative flex items-center">
+          <span class="material-symbols-outlined absolute left-3.5 text-on-surface-variant text-[20px] pointer-events-none">lock</span>
+          <input
+            [type]="showPassword() ? 'text' : 'password'"
+            [value]="password()"
+            (input)="password.set($any($event.target).value)"
+            placeholder="Enter your password"
+            required
+            class="w-full pl-11 pr-11 py-3 rounded-2xl bg-surface-container-lowest text-white font-body-md text-[14px] border border-white/[0.08] focus:border-primary/50 focus:bg-surface-container-high focus:outline-none transition-all placeholder-on-surface-variant/50"
+          />
+          <button
+            type="button"
+            (click)="togglePasswordVisibility()"
+            class="absolute right-3.5 text-on-surface-variant hover:text-white transition-colors cursor-pointer"
+          >
+            <span class="material-symbols-outlined text-[20px]">
+              {{ showPassword() ? 'visibility_off' : 'visibility' }}
+            </span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Submit Button -->
+      <button
+        type="submit"
+        [disabled]="isLoading()"
+        class="w-full py-3.5 px-4 rounded-2xl bg-gradient-to-r from-primary via-primary-container to-secondary text-surface-container-lowest font-headline-sm text-[15px] font-semibold flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(208,188,255,0.3)] hover:opacity-95 active:scale-[0.99] transition-all cursor-pointer mt-2"
+      >
+        @if (isLoading()) {
+          <span class="material-symbols-outlined text-[20px] animate-spin">refresh</span>
+          <span>Signing in...</span>
+        } @else {
+          <span class="material-symbols-outlined text-[20px]">login</span>
+          <span>Sign In to Studio</span>
+        }
+      </button>
+    </form>
+
+    <!-- Navigation Link to Register -->
+    <div class="pt-4 border-t border-white/[0.06] text-center font-body-md text-[13px] text-on-surface-variant">
+      Don't have an account?
+      <a routerLink="/register" class="text-primary font-semibold hover:underline ml-1">Create an Account</a>
+    </div>
+
+  </div>
+</div>

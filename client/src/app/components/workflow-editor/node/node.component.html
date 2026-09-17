@@ -1,0 +1,97 @@
+<div 
+  #nodeElement
+  class="node"
+  [class.selected]="selected()"
+  [class.connecting]="connecting()"
+  [ngStyle]="nodeStyle()"
+  (mousedown)="onMouseDown($event)"
+  (click)="onClick($event)"
+>
+  <!-- Node Header -->
+  <div class="node-header">
+    <div class="node-title">
+      <div 
+        class="node-type-indicator" 
+        [style.background]="getTypeColor(node().type)"
+      ></div>
+      <span>{{ node().title || node().type }}</span>
+    </div>
+    <div class="node-actions">
+      <button 
+        class="btn-node-action" 
+        (click)="onDeleteClick($event)"
+        title="Delete node"
+      >
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="3 6 5 6 21 6"></polyline>
+          <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+        </svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- Node Body -->
+  <div class="node-body">
+    <!-- Sockets -->
+    <div class="node-sockets">
+      <!-- Inputs -->
+      <div class="node-inputs">
+        @for (socket of inputSockets(); track trackBySocketName($index, socket)) {
+          <div 
+            class="socket node-input"
+            [class.connected]="socket.link !== null && socket.link !== undefined"
+            [class.connecting]="canConnectTo(socket)"
+            (click)="onSocketClick($event, socket, false)"
+            (mousedown)="onSocketMouseDown($event, socket.name, false)"
+          >
+            <span class="socket-name">{{ socket.name }}</span>
+            <div 
+              class="socket-connector" 
+              [style.border-color]="getTypeColor(socket.type)"
+              [style.background]="(socket.link !== null && socket.link !== undefined) ? getTypeColor(socket.type) : 'var(--bg-primary)'"
+            ></div>
+            <span class="socket-type-badge">{{ socket.type }}</span>
+          </div>
+        }
+      </div>
+
+      <!-- Outputs -->
+      <div class="node-outputs">
+        @for (socket of outputSockets(); track trackBySocketName($index, socket)) {
+          <div 
+            class="socket node-output"
+            [class.connected]="socket.links && socket.links.length > 0"
+            [class.connecting]="isConnectingFrom(socket.name)"
+            (click)="onSocketClick($event, socket, true)"
+            (mousedown)="onSocketMouseDown($event, socket.name, true)"
+          >
+            <div 
+              class="socket-connector" 
+              [style.border-color]="getTypeColor(socket.type)"
+              [style.background]="(socket.links && socket.links.length > 0) ? getTypeColor(socket.type) : 'var(--bg-primary)'"
+            ></div>
+            <span class="socket-name">{{ socket.name }}</span>
+            <span class="socket-type-badge">{{ socket.type }}</span>
+          </div>
+        }
+      </div>
+    </div>
+
+    <!-- Widgets (using widgetValues from ComfyUINode) -->
+    @if (node().widgetValues && widgetEntries().length > 0) {
+      <div class="node-widgets">
+        @for (entry of widgetEntries(); track entry.key) {
+          <div class="widget">
+            <label>{{ entry.key }}</label>
+            <input
+              type="text"
+              [value]="entry.value"
+              (input)="onWidgetChange(entry.key, $event.target.value)"
+              readonly
+            >
+          </div>
+        }
+      </div>
+    }
+  </div>
+</div>

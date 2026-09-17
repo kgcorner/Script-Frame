@@ -4,7 +4,7 @@ import { scriptframeWorkflowService } from '../services/scriptframeWorkflow.js';
 
 const nodeSchema = z.object({
   id: z.string(),
-  type: z.enum(['worker', 'llm', 'comfyui-stack', 'comfyui-app']),
+  type: z.enum(['worker', 'llm', 'comfyui-stack', 'comfyui-app', 'start', 'character-scene-creator']),
   title: z.string(),
   position: z.object({
     x: z.number(),

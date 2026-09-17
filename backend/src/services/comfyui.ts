@@ -99,6 +99,27 @@ export class ComfyUIService {
     }
   }
 
+  // Reachability probe for GET /api/health/connection: distinguishes "server
+  // unreachable" from "reachable but the probe failed", and surfaces the
+  // ComfyUI version when /system_stats answers 2xx.
+  async connectionCheck(): Promise<{ connected: boolean; healthy: boolean; error?: string; version?: string | null }> {
+    try {
+      const response = await this.client.get<ComfyUISystemStats>('/system_stats', { timeout: 5000 });
+      return { connected: true, healthy: true, version: response.data?.system?.comfyui_version ?? null };
+    } catch (error) {
+      const axiosError = error as AxiosError;
+      if (axiosError.response) {
+        return {
+          connected: true,
+          healthy: false,
+          error: `Probe /system_stats returned HTTP ${axiosError.response.status} (service reachable)`,
+        };
+      }
+      const reason = axiosError.code ? `${axiosError.message} (${axiosError.code})` : axiosError.message;
+      return { connected: false, healthy: false, error: reason || 'Unknown error' };
+    }
+  }
+
   async uploadImage(imageBuffer: Buffer, filename: string, subfolder?: string): Promise<{ name: string; subfolder: string; type: string }> {
     const formData = new FormData();
     const uint8Array = new Uint8Array(imageBuffer);

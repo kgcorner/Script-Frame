@@ -258,9 +258,21 @@ export class LLMProviderService {
   // Database operations for LLM Apps
   async createApp(input: LLMAppCreateRequest): Promise<LLMApp> {
     const providerId = await this.resolveProviderId(input.providerId, input.apiKey, input.endpoint);
+
+    // Persist any per-app endpoint / API-key override so a custom endpoint (or a post-create
+    // provider edit) is honoured by fetchModels / testConnection instead of the provider row.
+    if (input.endpoint || input.apiKey) {
+      await this.updateApp(providerId, { apiKey: input.apiKey });
+    }
+
     const appId = uuidv4();
     const newApp: NewLLMApp = { id: appId, name: input.name, description: input.description, providerId, model: input.model, temperature: input.temperature ?? 0.7, maxTokens: input.maxTokens ?? 4096, systemPrompt: input.systemPrompt, config: input.config || {}, isActive: true };
-    await db.insert(schema.llmApps).values(newApp);
+
+    const endpoint = input.endpoint ?? null;
+    const apiKey = input.apiKey ?? null;
+    const insertValues: NewLLMApp = { ...newApp, endpoint, apiKey };
+
+    await db.insert(schema.llmApps).values(insertValues);
     const [created] = await db.select().from(schema.llmApps).where(eq(schema.llmApps.id, appId));
     return created!;
   }
@@ -340,6 +352,8 @@ export class LLMProviderService {
     if (updates.temperature !== undefined) updateData.temperature = updates.temperature;
     if (updates.maxTokens !== undefined) updateData.maxTokens = updates.maxTokens;
     if (updates.systemPrompt !== undefined) updateData.systemPrompt = updates.systemPrompt;
+    if (updates.endpoint !== undefined) updateData.endpoint = updates.endpoint;
+    if (updates.apiKey !== undefined) updateData.apiKey = updates.apiKey;
     if (updates.config !== undefined) updateData.config = updates.config;
     if (updates.isActive !== undefined) updateData.isActive = updates.isActive;
     await db.update(schema.llmApps).set(updateData).where(eq(schema.llmApps.id, appId));
@@ -378,7 +392,12 @@ export class LLMProviderService {
 
     const providerName = provider.name as LLMProviderName;
     if (!PROVIDER_CONFIGS[providerName]) throw new Error(`Unknown LLM provider: ${providerName}`);
-    const client = this.getClient(providerName, provider.baseUrl, provider.apiKey ?? undefined);
+
+    // Per-app endpoint / API-key overrides take precedence over the provider row so a custom
+    // endpoint or a post-create provider edit is honoured (see testConnection()).
+    const baseUrl = app.endpoint ?? provider.baseUrl;
+    const apiKey = app.apiKey ?? provider.apiKey;
+    const client = this.getClient(providerName, baseUrl, apiKey || undefined);
 
     let correctionRetries = options.correctionRetries ?? config.videoGeneration.llmCorrectionRetries;
     let lastError: Error;
@@ -394,7 +413,7 @@ export class LLMProviderService {
           userPrompt: attemptPrompt,
           temperature: app.temperature ?? 0.7,
           maxTokens: app.maxTokens ?? 4096,
-          apiKey: provider.apiKey ?? undefined,
+          apiKey: apiKey || undefined,
         });
       } catch (err) {
         // Transport/API errors are not corrected by re-asking the model — fail fast.

@@ -328,6 +328,87 @@
                 </div>
               }
 
+              <!-- Start Node Specific Properties -->
+              @if (selectedNode().node!.type === 'start') {
+                <div class="property-section">
+                  <h4>Workflow Entry Point</h4>
+                  <p class="socket-empty">
+                    The Start node emits no data. Connect its output port to the first node of the workflow.
+                  </p>
+                </div>
+              }
+
+              <!-- Character-Scene-Creator Node Specific Properties -->
+              @if (selectedNode().node!.type === 'character-scene-creator') {
+                <div class="property-section">
+                  <h4>ComfyUI Stack</h4>
+                  <div class="property-row">
+                    <label>Selected Stack</label>
+                    <select
+                      class="property-input"
+                      [value]="selectedNode().node!.data?.comfyuiStackId || ''"
+                      (change)="updateNodeData(selectedNode().node!.id, 'comfyuiStackId', $any($event.target).value); updateNodeData(selectedNode().node!.id, 'comfyuiStackName', $any(getComfyuiStackName($any($event.target).value)))"
+                    >
+                      <option value="">-- Choose ComfyUI Stack --</option>
+                      @for (stack of comfyuiStacks(); track stack.id) {
+                        <option [value]="stack.id">{{ stack.name }} ({{ stack.appIds.length }} app(s))</option>
+                      }
+                    </select>
+                  </div>
+                  <p class="socket-empty">
+                    Renders the character and location images. Can also be wired via the "comfyui-stack" input port.
+                  </p>
+                </div>
+
+                <div class="property-section">
+                  <h4>Script</h4>
+                  <div class="property-row">
+                    <label>Script</label>
+                    <textarea
+                      class="property-textarea"
+                      rows="4"
+                      placeholder="Script used when the 'script' input port is not connected..."
+                      [value]="selectedNode().node!.data?.script || ''"
+                      (input)="updateNodeData(selectedNode().node!.id, 'script', $any($event.target).value)"
+                    ></textarea>
+                  </div>
+                </div>
+
+                <div class="property-section">
+                  <h4>Character Prompts</h4>
+                  <div class="property-row">
+                    <label>Prompts (one per line)</label>
+                    <textarea
+                      class="property-textarea"
+                      rows="4"
+                      placeholder="Wizard in a blue robe&#10;Knight in silver armor"
+                      [value]="promptsToText(selectedNode().node!.data?.characterPrompts)"
+                      (input)="updateNodeData(selectedNode().node!.id, 'characterPrompts', textToPrompts($any($event.target).value))"
+                    ></textarea>
+                  </div>
+                  <p class="socket-empty">
+                    One character prompt per line. Used when the "character-prompts" input port is not connected.
+                  </p>
+                </div>
+
+                <div class="property-section">
+                  <h4>Location Prompts</h4>
+                  <div class="property-row">
+                    <label>Prompts (one per line)</label>
+                    <textarea
+                      class="property-textarea"
+                      rows="4"
+                      placeholder="Enchanted forest&#10;Castle courtyard at dusk"
+                      [value]="promptsToText(selectedNode().node!.data?.locationPrompts)"
+                      (input)="updateNodeData(selectedNode().node!.id, 'locationPrompts', textToPrompts($any($event.target).value))"
+                    ></textarea>
+                  </div>
+                  <p class="socket-empty">
+                    One location prompt per line. Used when the "location-prompts" input port is not connected.
+                  </p>
+                </div>
+              }
+
               <div class="property-section">
                 <h4>Position</h4>
                 <div class="property-row">

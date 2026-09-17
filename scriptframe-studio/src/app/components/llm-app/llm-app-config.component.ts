@@ -262,6 +262,10 @@ export class LLMAppConfigComponent implements OnInit, OnDestroy {
         maxTokens: value.maxTokens,
         systemPrompt: value.systemPrompt || undefined,
         isActive: value.isActive,
+        // Persist the endpoint / API-key override so a custom endpoint (or a post-create
+        // provider edit) is honoured by fetchModels / testConnection on subsequent saves.
+        endpoint: value.endpoint || undefined,
+        apiKey: value.apiKey || undefined,
       };
 
       this.llmProviderService.updateApp(editing.id, request)

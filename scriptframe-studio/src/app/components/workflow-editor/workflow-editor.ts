@@ -1,8 +1,10 @@
 import { Component, OnInit, OnDestroy, ViewChild, ElementRef, signal, computed } from '@angular/core';
+import { ActivatedRoute, Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Subject, takeUntil, forkJoin, of } from 'rxjs';
 import { catchError } from 'rxjs/operators';
+import { Observable } from 'rxjs';
 import { LLMProviderService } from '../../services/llm-provider.service';
 import { ComfyUIAppService } from '../../services/comfyui-app.service';
 import { ComfyUIStackService } from '../../services/comfyui-stack.service';
@@ -13,6 +15,7 @@ import {
   ScriptFrameLink,
   ScriptFrameNodeType,
   ScriptFrameWorkflowCreateRequest,
+  ScriptFrameWorkflowDetailResponse,
   ScriptFrameWorkflowUpdateRequest,
   ScriptFrameTestConnectionResponse,
   LLMApp,
@@ -79,6 +82,10 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
   showSaveDialog = signal(false);
   testResults = signal<ScriptFrameTestConnectionResponse[]>([]);
 
+  // Editing-session flag: set when this view is opened for an existing workflow (via the
+  // `/workflow/:id` route). When set, saves update in place instead of creating a new one.
+  editingExistingId = signal<string | null>(null);
+
   saveDialogData = {
     name: '',
     description: '',
@@ -98,6 +105,12 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
   connectionPreview = signal<{ x: number; y: number } | null>(null);
 
   readonly paletteNodeTypes: PaletteNodeType[] = [
+    {
+      type: 'start',
+      displayName: 'Start Node',
+      description: 'Entry point of the workflow. Emits no data - connect its output to the first node.',
+      color: '#86efac',
+    },
     {
       type: 'worker',
       displayName: 'Worker Node',
@@ -122,6 +135,12 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
       description: 'Represents a connection to ComfyUI service with a specific workflow',
       color: '#5eead4',
     },
+    {
+      type: 'character-scene-creator',
+      displayName: 'Character-Scene-Creator Node',
+      description: 'Turns a script + character/location prompts into rendered character and location images',
+      color: '#fda4af',
+    },
   ];
 
   filteredPaletteNodeTypes = computed(() => {
@@ -140,10 +159,18 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
     private comfyuiAppService: ComfyUIAppService,
     private comfyuiStackService: ComfyUIStackService,
     private scriptframeService: ScriptFrameWorkflowService,
-    private litegraphService: WorkflowEditorLiteGraphService
+    private litegraphService: WorkflowEditorLiteGraphService,
+    private route: ActivatedRoute
   ) {}
 
   ngOnInit(): void {
+    // Detect whether this view was opened for an existing workflow via the `/workflow/:id` route.
+    const id = this.route?.snapshot?.params?.['id'];
+    if (id) {
+      this.editingExistingId.set(id);
+      this.loadWorkflowById(id).subscribe();
+    }
+
     this.loadData();
     this.initDefaultWorkflow();
     this.setupLiteGraph();
@@ -154,6 +181,17 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
     this.litegraphService.destroy();
     this.destroy$.next();
     this.destroy$.complete();
+  }
+
+  /** Loads an existing workflow by ID (opened via the `/workflow/:id` route) so it can be edited in place. */
+  loadWorkflowById(id: string): Observable<ScriptFrameWorkflowDetailResponse> {
+    return this.scriptframeService.getWorkflow(id).pipe(
+      catchError((err) => {
+        console.error('Failed to load workflow', id, err);
+        this.error.set(`Failed to load workflow \"${id}\": ${err.message || 'Unknown error'}`);
+        return of({ success: false, data: null as never });
+      })
+    );
   }
 
   /** Creates the embedded ComfyUI-style LiteGraph canvas. */
@@ -477,6 +515,35 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
         // ComfyUI App Node: input port "stack" from ComfyUIStackNode
         inputs = [{ name: 'stack', type: 'comfyui-app', link: null }];
         break;
+      case 'start':
+        nodeData = {};
+        // Start Node: no inputs. A single wildcard output that emits no data and simply lets the
+        // first node in the workflow be connected to it.
+        outputs = [{ name: 'start', type: '*', links: [] }];
+        break;
+      case 'character-scene-creator':
+        nodeData = {
+          script: '',
+          characterPrompts: [],
+          locationPrompts: [],
+          comfyuiStackId: '',
+          comfyuiStackName: '',
+        };
+        // Character-Scene-Creator Node:
+        //   4 inputs  -> script, character prompts (array), location prompts (array), ComfyUI stack
+        //   3 outputs -> script, character image paths (array), location image paths (array)
+        inputs = [
+          { name: 'script', type: 'script', link: null },
+          { name: 'character-prompts', type: 'character-prompts', link: null },
+          { name: 'location-prompts', type: 'location-prompts', link: null },
+          { name: 'comfyui-stack', type: 'comfyui-stack', link: null },
+        ];
+        outputs = [
+          { name: 'script', type: 'script', links: [] },
+          { name: 'character-images', type: 'character-images', links: [] },
+          { name: 'location-images', type: 'location-images', links: [] },
+        ];
+        break;
       default:
         nodeData = {};
     }
@@ -722,7 +789,11 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
     this.isSaving.set(true);
     const wf = this.workflow();
 
-    if (wf.id) {
+    // Branch on the editing-session flag (set when opened via `/workflow/:id`) rather than a
+    // raw in-memory id, so saving an edited saved workflow overwrites in place instead of
+    // always prompting "save as new".
+    const editingId = this.editingExistingId();
+    if (editingId) {
       const updateReq: ScriptFrameWorkflowUpdateRequest = {
         name: data.name,
         description: data.description || undefined,
@@ -785,6 +856,10 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
   }
 
   loadWorkflow(workflow: ScriptFrameWorkflow): void {
+    // Mark this as an editing session so saving updates the loaded workflow in place instead of
+    // creating a new one. The `/workflow/:id` route is not used by any UI path, so opening a saved
+    // workflow from the list (or elsewhere) must set the flag here rather than relying on the route param.
+    this.editingExistingId.set(workflow.id);
     this.workflow.set(workflow);
     this.litegraphService.loadWorkflow(workflow);
     this.clearSelection();
@@ -857,6 +932,9 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
       } else if (n.type === 'worker') {
         // Worker: LLM port + ComfyUI stack port.
         list.push({ nodeId: n.id, type: 'llm', appId: n.data?.llmAppId });
+        list.push({ nodeId: n.id, type: 'comfyui-stack', appId: n.data?.comfyuiStackId });
+      } else if (n.type === 'character-scene-creator') {
+        // Character-Scene-Creator: its ComfyUI stack port is the only testable connection.
         list.push({ nodeId: n.id, type: 'comfyui-stack', appId: n.data?.comfyuiStackId });
       }
     }
@@ -941,6 +1019,8 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
       llm: '#8b5cf6',
       'comfyui-stack': '#06b6d4',
       'comfyui-app': '#14b8a6',
+      start: '#22c55e',
+      'character-scene-creator': '#f43f5e',
       string: '#22c55e',
       number: '#3b82f6',
       boolean: '#f59e0b',
@@ -949,8 +1029,27 @@ export class WorkflowEditorComponent implements OnInit, OnDestroy {
       video: '#f97316',
       text: '#22c55e',
       any: '#64748b',
+      // Character-Scene-Creator ports
+      script: '#10b981',
+      'character-prompts': '#a855f7',
+      'location-prompts': '#ec4899',
+      'character-images': '#ef4444',
+      'location-images': '#f97316',
     };
     return colors[type?.toLowerCase()] || '#64748b';
+  }
+
+  /** Joins a prompt-array node field into the newline-separated text shown in the property panel. */
+  promptsToText(prompts?: string[]): string {
+    return (prompts ?? []).join('\n');
+  }
+
+  /** Splits the newline-separated textarea value into a trimmed, non-empty prompt array. */
+  textToPrompts(text: string): string[] {
+    return text
+      .split('\n')
+      .map((line) => line.trim())
+      .filter((line) => line.length > 0);
   }
 
   /** Resolve an LLM App name from its id (used by the worker node's LLM port selector). */

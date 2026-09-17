@@ -127,10 +127,15 @@ export class ScriptFrameWorkflowService {
 
         const provider = await llmProviderService.getProvider(app.providerId);
         if (provider) {
+          // Per-app endpoint / API-key overrides take precedence over the provider row so a
+          // custom endpoint or a post-create provider edit is honoured by fetchModels.
+          const baseUrl = app.endpoint ?? provider.baseUrl;
+          const apiKey = app.apiKey ?? provider.apiKey;
+
           const res = await llmProviderService.fetchModels({
             provider: provider.name as any,
-            baseUrl: provider.baseUrl,
-            apiKey: provider.apiKey ?? undefined,
+            baseUrl,
+            apiKey: apiKey || undefined,
           });
 
           if (!res.success) {

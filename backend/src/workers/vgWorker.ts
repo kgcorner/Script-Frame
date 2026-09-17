@@ -640,7 +640,9 @@ export class VGWorker {
   private async injectStartFrame(definition: Record<string, unknown>, imagePath: string): Promise<Record<string, unknown>> {
     const buffer = await readFile(imagePath);
     const filename = `sf_${generateId()}.png`;
-    const uploaded = await comfyuiService.uploadImage(buffer, filename, 'vgworker');
+    // No subfolder: LoadImage resolves values against the input directory root,
+    // and only files there appear in its validation list.
+    const uploaded = await comfyuiService.uploadImage(buffer, filename);
 
     const clone = JSON.parse(JSON.stringify(definition)) as Record<string, Record<string, unknown>>;
     const imageInputPattern = /^(image|start_image|init_image|start_frame|first_frame)$/i;

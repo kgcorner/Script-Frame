@@ -1,0 +1,170 @@
+<div class="min-h-screen w-full bg-background flex flex-col justify-center items-center px-4 py-12 relative overflow-hidden selection:bg-primary/20">
+  
+  <!-- Ambient background glow accents -->
+  <div class="absolute top-1/4 left-1/3 -translate-x-1/2 -translate-y-1/2 w-[550px] h-[550px] bg-primary/10 rounded-full blur-[130px] pointer-events-none"></div>
+  <div class="absolute bottom-10 left-10 w-[350px] h-[350px] bg-secondary/10 rounded-full blur-[100px] pointer-events-none"></div>
+
+  <!-- Main Register Auth Card Container -->
+  <div class="w-full max-w-md bg-surface-container/80 backdrop-blur-2xl rounded-3xl border border-white/[0.08] p-8 shadow-2xl relative z-10 space-y-6">
+    
+    <!-- Brand Header -->
+    <div class="flex flex-col items-center text-center space-y-3">
+      <div class="flex items-center justify-center gap-3">
+        <img
+          alt="CineForge AI Logo"
+          class="h-9 w-auto object-contain"
+          src="/assets/x-small-logo.png"
+        />
+        <div class="flex items-center gap-2">          
+          <span class="px-2 py-0.5 rounded text-[10px] font-label-xs font-semibold tracking-wider uppercase bg-primary/15 text-primary border border-primary/30">PRO</span>
+        </div>
+      </div>
+      <p class="text-body-md text-on-surface-variant text-[14px]">Create your account to start generating videos</p>
+    </div>
+
+    <!-- Failure Error Banner -->
+    @if (errorMessage()) {
+      <div class="p-4 rounded-2xl bg-error/15 border border-error/30 text-error font-body-sm text-[13px] flex items-center gap-3 animate-fadeIn">
+        <span class="material-symbols-outlined text-[22px] flex-shrink-0">error</span>
+        <div class="flex-1">
+          <p class="font-semibold text-[14px]">Registration Failed</p>
+          <p class="text-[12px] opacity-90 mt-0.5">{{ errorMessage() }}</p>
+        </div>
+      </div>
+    }
+
+    <!-- Success View -->
+    @if (isRegistered()) {
+      <div class="p-6 rounded-2xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 flex flex-col items-center text-center space-y-4 animate-fadeIn">
+        <div class="w-12 h-12 rounded-full bg-emerald-500/20 flex items-center justify-center">
+          <span class="material-symbols-outlined text-[28px] text-emerald-400">check_circle</span>
+        </div>
+        <div class="space-y-1">
+          <h4 class="font-headline-sm text-white text-[16px] font-semibold">Registration Successful!</h4>
+          <p class="text-body-sm text-emerald-200/90 text-[13px] leading-relaxed">
+            {{ successMessage() }}
+          </p>
+        </div>
+        <button
+          type="button"
+          (click)="goToLogin()"
+          class="w-full py-3 px-4 rounded-2xl bg-emerald-500 hover:bg-emerald-400 text-surface-container-lowest font-headline-sm text-[14px] font-semibold flex items-center justify-center gap-2 transition-all cursor-pointer shadow-lg"
+        >
+          <span class="material-symbols-outlined text-[18px]">login</span>
+          <span>Proceed to Sign In</span>
+        </button>
+      </div>
+    } @else {
+      <!-- Registration Form -->
+      <form (submit)="onSubmit(); $event.preventDefault();" class="space-y-4">
+        <!-- Email Field -->
+        <div class="space-y-1.5">
+          <label class="block text-[12px] font-label-sm uppercase tracking-wider text-on-surface-variant font-medium">Email Address</label>
+          <div class="relative flex items-center">
+            <span class="material-symbols-outlined absolute left-3.5 text-on-surface-variant text-[20px] pointer-events-none">mail</span>
+            <input
+              type="email"
+              [value]="email()"
+              (input)="email.set($any($event.target).value)"
+              placeholder="you@example.com"
+              required
+              class="w-full pl-11 pr-4 py-3 rounded-2xl bg-surface-container-lowest text-white font-body-md text-[14px] border border-white/[0.08] focus:border-primary/50 focus:bg-surface-container-high focus:outline-none transition-all placeholder-on-surface-variant/50"
+            />
+          </div>
+        </div>
+
+        <!-- Username Field -->
+        <div class="space-y-1.5">
+          <label class="block text-[12px] font-label-sm uppercase tracking-wider text-on-surface-variant font-medium">Username</label>
+          <div class="relative flex items-center">
+            <span class="material-symbols-outlined absolute left-3.5 text-on-surface-variant text-[20px] pointer-events-none">person</span>
+            <input
+              type="text"
+              [value]="username()"
+              (input)="username.set($any($event.target).value)"
+              placeholder="Choose a username"
+              required
+              class="w-full pl-11 pr-4 py-3 rounded-2xl bg-surface-container-lowest text-white font-body-md text-[14px] border border-white/[0.08] focus:border-primary/50 focus:bg-surface-container-high focus:outline-none transition-all placeholder-on-surface-variant/50"
+            />
+          </div>
+        </div>
+
+        <!-- Password Field -->
+        <div class="space-y-1.5">
+          <label class="block text-[12px] font-label-sm uppercase tracking-wider text-on-surface-variant font-medium">Password</label>
+          <div class="relative flex items-center">
+            <span class="material-symbols-outlined absolute left-3.5 text-on-surface-variant text-[20px] pointer-events-none">lock</span>
+            <input
+              [type]="showPassword() ? 'text' : 'password'"
+              [value]="password()"
+              (input)="password.set($any($event.target).value)"
+              placeholder="Create a password"
+              required
+              class="w-full pl-11 pr-11 py-3 rounded-2xl bg-surface-container-lowest text-white font-body-md text-[14px] border border-white/[0.08] focus:border-primary/50 focus:bg-surface-container-high focus:outline-none transition-all placeholder-on-surface-variant/50"
+            />
+            <button
+              type="button"
+              (click)="togglePasswordVisibility()"
+              class="absolute right-3.5 text-on-surface-variant hover:text-white transition-colors cursor-pointer"
+            >
+              <span class="material-symbols-outlined text-[20px]">
+                {{ showPassword() ? 'visibility_off' : 'visibility' }}
+              </span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Confirm Password Field -->
+        <div class="space-y-1.5">
+          <label class="block text-[12px] font-label-sm uppercase tracking-wider text-on-surface-variant font-medium">Confirm Password</label>
+          <div class="relative flex items-center">
+            <span class="material-symbols-outlined absolute left-3.5 text-on-surface-variant text-[20px] pointer-events-none">lock_reset</span>
+            <input
+              [type]="showConfirmPassword() ? 'text' : 'password'"
+              [value]="confirmPassword()"
+              (input)="confirmPassword.set($any($event.target).value)"
+              placeholder="Re-enter password"
+              required
+              class="w-full pl-11 pr-11 py-3 rounded-2xl bg-surface-container-lowest text-white font-body-md text-[14px] border border-white/[0.08] focus:border-primary/50 focus:bg-surface-container-high focus:outline-none transition-all placeholder-on-surface-variant/50"
+              [ngClass]="{ 'border-error/60': passwordMismatch() }"
+            />
+            <button
+              type="button"
+              (click)="toggleConfirmPasswordVisibility()"
+              class="absolute right-3.5 text-on-surface-variant hover:text-white transition-colors cursor-pointer"
+            >
+              <span class="material-symbols-outlined text-[20px]">
+                {{ showConfirmPassword() ? 'visibility_off' : 'visibility' }}
+              </span>
+            </button>
+          </div>
+          @if (passwordMismatch()) {
+            <p class="text-[11px] text-error font-body-sm pt-0.5">Passwords do not match</p>
+          }
+        </div>
+
+        <!-- Submit Button -->
+        <button
+          type="submit"
+          [disabled]="isLoading() || passwordMismatch()"
+          class="w-full py-3.5 px-4 rounded-2xl bg-gradient-to-r from-primary via-primary-container to-secondary text-surface-container-lowest font-headline-sm text-[15px] font-semibold flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(208,188,255,0.3)] hover:opacity-95 active:scale-[0.99] disabled:opacity-50 transition-all cursor-pointer mt-2"
+        >
+          @if (isLoading()) {
+            <span class="material-symbols-outlined text-[20px] animate-spin">refresh</span>
+            <span>Creating account...</span>
+          } @else {
+            <span class="material-symbols-outlined text-[20px]">person_add</span>
+            <span>Create Account</span>
+          }
+        </button>
+      </form>
+    }
+
+    <!-- Navigation Link to Login -->
+    <div class="pt-4 border-t border-white/[0.06] text-center font-body-md text-[13px] text-on-surface-variant">
+      Already have an account?
+      <a routerLink="/login" class="text-primary font-semibold hover:underline ml-1">Sign In</a>
+    </div>
+
+  </div>
+</div>

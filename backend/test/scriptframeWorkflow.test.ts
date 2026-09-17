@@ -1,6 +1,52 @@
+
+describe('LLM App endpoint/apiKey persistence (Issue 1)', () => {
+  it('should persist and return per-app endpoint / apiKey overrides', async () => {
+    const provider = await llmProviderService.createProvider({
+      name: 'anthropic',
+      displayName: 'Anthropic',
+      baseUrl: 'https://api.anthropic.com',
+      apiKey: 'provider-key',
+    });
+
+    // Default create (no overrides) -> endpoint/apiKey are null.
+    const appDefault = await llmProviderService.createApp({
+      name: 'Default App',
+      providerId: provider.id,
+      model: 'claude-1',
+    });
+    assert.strictEqual(appDefault.endpoint, null);
+    assert.strictEqual(appDefault.apiKey, null);
+
+    // Create with per-app overrides -> persisted to the app row.
+    const appOverride = await llmProviderService.createApp({
+      name: 'Custom Endpoint App',
+      providerId: provider.id,
+      model: 'claude-1',
+      endpoint: 'https://custom.example.com/v1',
+      apiKey: 'app-key',
+    });
+    assert.strictEqual(appOverride.endpoint, 'https://custom.example.com/v1');
+    assert.strictEqual(appOverride.apiKey, 'app-key');
+
+    // Retrieval round-trips the overrides.
+    const fetched = await llmProviderService.getApp(appOverride.id);
+    assert.ok(fetched);
+    assert.strictEqual(fetched?.endpoint, 'https://custom.example.com/v1');
+    assert.strictEqual(fetched?.apiKey, 'app-key');
+
+    // Update path also persists overrides.
+    const updated = await llmProviderService.updateApp(appDefault.id, {
+      endpoint: 'https://updated.example.com',
+      apiKey: 'updated-key',
+    });
+    assert.strictEqual(updated?.endpoint, 'https://updated.example.com');
+    assert.strictEqual(updated?.apiKey, 'updated-key');
+  });
+});
 import test, { describe, it, before } from 'node:test';
 import assert from 'node:assert';
 import { scriptframeWorkflowService } from '../src/services/scriptframeWorkflow.js';
+import { llmProviderService } from '../src/services/llmProvider.js';
 import { initDb } from '../src/db/index.js';
 import type { ScriptFrameNode } from '../src/types/index.js';
 
@@ -146,5 +192,56 @@ describe('ScriptFrameWorkflowService', () => {
     assert.strictEqual(res.type, 'comfyui-app');
     assert.ok(res.status === 'healthy' || res.status === 'unhealthy');
     assert.ok(res.message);
+  });
+
+  it('should persist Start and Character-Scene-Creator nodes', async () => {
+    const nodes: ScriptFrameNode[] = [
+      {
+        id: 'start-1',
+        type: 'start',
+        title: 'Start Node',
+        position: { x: 0, y: 0 },
+        // Start has no inputs and a single wildcard output that emits no data.
+        inputs: [],
+        outputs: [{ name: 'start', type: '*', links: [1] }],
+      },
+      {
+        id: 'character-scene-creator-1',
+        type: 'character-scene-creator',
+        title: 'Character-Scene-Creator Node',
+        position: { x: 300, y: 0 },
+        inputs: [
+          { name: 'script', type: 'script', link: 1, linkedNodeId: 'start-1', linkedOutputName: 'start' },
+          { name: 'character-prompts', type: 'character-prompts', link: null },
+          { name: 'location-prompts', type: 'location-prompts', link: null },
+          { name: 'comfyui-stack', type: 'comfyui-stack', link: null },
+        ],
+        outputs: [
+          { name: 'script', type: 'script', links: [] },
+          { name: 'character-images', type: 'character-images', links: [] },
+          { name: 'location-images', type: 'location-images', links: [] },
+        ],
+        data: { script: 'Once upon a time', characterPrompts: ['hero'], locationPrompts: ['forest'] },
+      },
+    ];
+
+    const links = [
+      { id: 1, sourceNodeId: 'start-1', sourceOutputName: 'start', targetNodeId: 'character-scene-creator-1', targetInputName: 'script' },
+    ];
+
+    const created = await scriptframeWorkflowService.createWorkflow({
+      name: 'Start -> Character-Scene-Creator',
+      nodes,
+      links,
+    });
+
+    const fetched = await scriptframeWorkflowService.getWorkflow(created.id);
+    assert.ok(fetched, 'Workflow should be found by ID');
+    assert.strictEqual(fetched.nodes.length, 2);
+    assert.strictEqual(fetched.nodes[0].type, 'start');
+    assert.strictEqual(fetched.nodes[1].type, 'character-scene-creator');
+    assert.deepStrictEqual(fetched.nodes[1].data?.characterPrompts, ['hero']);
+    assert.deepStrictEqual(fetched.nodes[1].data?.locationPrompts, ['forest']);
+    assert.strictEqual(fetched.links?.length, 1);
   });
 });

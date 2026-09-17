@@ -1,0 +1,507 @@
+<div class="workflow-input-selector">
+  <div class="header">
+    <h2>Workflow Input Selector</h2>
+    <p class="description">Select a workflow to view all its input fields and configure primary fields.</p>
+  </div>
+
+  @if (error()) {
+    <div class="alert alert-danger">{{ error() }}</div>
+  }
+
+  <!-- Main Tab Navigation -->
+  <div class="main-tabs">
+    <button 
+      class="main-tab-btn" 
+      [class.active]="activeTab() === 'create'"
+      (click)="setActiveTab('create')">
+      Create New App
+    </button>
+    <button 
+      class="main-tab-btn" 
+      [class.active]="activeTab() === 'manage'"
+      (click)="setActiveTab('manage')">
+      Manage Apps
+      @if (apps().length > 0) {
+        <span class="badge">{{ apps().length }}</span>
+      }
+    </button>
+  </div>
+
+  <!-- CREATE TAB -->
+  @if (activeTab() === 'create') {
+    <!-- Workflow Source Selection -->
+    <div class="card workflow-source-selection">
+      <div class="card-header">
+        <h3>Workflow Source</h3>
+      </div>
+      <div class="card-body">
+        <div class="source-tabs">
+          <button 
+            class="tab-btn" 
+            [class.active]="selectedWorkflowSource() === 'local'"
+            (click)="selectedWorkflowSource.set('local'); onWorkflowSourceChange()">
+            Local Workflows
+          </button>
+          <button 
+            class="tab-btn" 
+            [class.active]="selectedWorkflowSource() === 'comfyui-saved'"
+            (click)="selectedWorkflowSource.set('comfyui-saved'); onWorkflowSourceChange()">
+            ComfyUI Saved
+            @if (comfyUISavedWorkflows().length > 0) {
+              <span class="badge">{{ comfyUISavedWorkflows().length }}</span>
+            }
+          </button>
+          <button 
+            class="tab-btn" 
+            [class.active]="selectedWorkflowSource() === 'comfyui-history'"
+            (click)="selectedWorkflowSource.set('comfyui-history'); onWorkflowSourceChange()">
+            ComfyUI History
+            @if (comfyUIHistoryWorkflows().length > 0) {
+              <span class="badge">{{ comfyUIHistoryWorkflows().length }}</span>
+            }
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Workflow Selection -->
+    <div class="card workflow-selection">
+      <div class="card-header">
+        <h3>Select Workflow</h3>
+      </div>
+      <div class="card-body">
+        @if (loading()) {
+          <div class="loading">Loading workflows...</div>
+        } @else {
+          <div class="form-group">
+            <label for="workflowSelect">Workflows</label>
+            <select 
+              id="workflowSelect"
+              class="form-control" 
+              [(ngModel)]="selectedWorkflowId" 
+              (change)="onWorkflowSelect()"
+              [disabled]="loadingInputs()">
+              <option value="">-- Choose a workflow --</option>
+              @for (wf of getCurrentWorkflows(); track getWorkflowKey(wf)) {
+                <option [value]="getWorkflowKey(wf)">{{ getWorkflowDisplayName(wf) }}</option>
+              }
+            </select>
+          </div>
+          
+          @if (selectedWorkflowId() && inputFields().length === 0 && !loadingInputs()) {
+            <p class="text-muted">This workflow has no input fields.</p>
+          }
+        }
+      </div>
+    </div>
+
+    <!-- Input Fields Display -->
+    @if (selectedWorkflowId() && inputFields().length > 0) {
+      <div class="card input-fields-card">
+        <div class="card-header">
+          <h3>Workflow Input Fields</h3>
+          <div class="header-actions">
+            <div class="search-box">
+              <input type="text" class="form-control" placeholder="Search fields..." [(ngModel)]="searchTerm" (input)="searchTerm.set($any($event.target).value)">
+            </div>
+          </div>
+        </div>
+        <div class="card-body">
+          @if (loadingInputs()) {
+            <div class="loading">Loading inputs...</div>
+          } @else {
+            <div class="input-fields-container">
+              @for (nodeId of getGroupedKeys(); track nodeId) {
+                <div class="node-group">
+                  <div class="node-header">
+                    <h4>{{ groupedFields()[nodeId][0]?.nodeType || 'Unknown Node' }} ({{ nodeId }})</h4>
+                    <span class="field-count">{{ groupedFields()[nodeId].length }} fields</span>
+                  </div>
+                  <div class="fields-list">
+                    @for (field of groupedFields()[nodeId]; track field.key) {
+                      <div class="field-item">
+                        <div class="field-main">
+                          <input type="checkbox" 
+                                 [checked]="field.isPrimary" 
+                                 (change)="togglePrimaryField(field)"
+                                 [id]="'field-' + field.key"
+                                 class="primary-checkbox">
+                          <label [for]="'field-' + field.key" class="field-label">
+                            <span class="field-name">{{ field.inputName }}</span>
+                            <span class="field-type-badge">{{ field.type }}</span>
+                          </label>
+                          <span class="field-default">Default: {{ formatValue(field.defaultValue) }}</span>
+                        </div>
+                        @if (field.isPrimary) {
+                          <div class="field-alias-input">
+                            <label for="aliasName-{{ field.key }}">Alias (for LLM)</label>
+                            <input
+                              id="aliasName-{{ field.key }}"
+                              type="text"
+                              class="form-control"
+                              placeholder="e.g., scene_description"
+                              [(ngModel)]="field.aliasName"
+                              (input)="field.aliasName = $any($event.target).value"
+                              title="User-defined alias name for LLM to reference this field">
+                          </div>
+                        }
+                      </div>
+                    }
+                  </div>
+                </div>
+              }
+              @if (filteredFields().length === 0 && searchTerm()) {
+                <div class="no-results">No fields match "{{ searchTerm() }}"</div>
+              }
+            </div>
+          }
+        </div>
+      </div>
+    }
+
+    <!-- Primary Fields Summary -->
+    @if (getPrimaryFields().length > 0) {
+      <div class="card primary-summary">
+        <div class="card-header">
+          <h3>Primary Fields Summary ({{ getPrimaryFields().length }})</h3>
+        </div>
+        <div class="card-body">
+          <div class="primary-fields-list">
+            @for (field of getPrimaryFields(); track field.key) {
+              <div class="primary-field-item">
+                <span class="field-info">
+                  <strong>{{ field.inputName }}</strong>
+                  <span class="field-meta">{{ field.nodeType }} ({{ field.nodeId }})</span>
+                </span>
+                <span class="field-type">{{ field.type }}</span>
+                <span class="field-default">{{ formatValue(field.defaultValue) }}</span>
+                <div class="field-alias">
+                  <label for="aliasName-{{ field.key }}">Alias (for LLM)</label>
+                  <input
+                    id="aliasName-{{ field.key }}"
+                    type="text"
+                    class="form-control"
+                    placeholder="e.g., scene_description"
+                    [(ngModel)]="field.aliasName"
+                    (input)="field.aliasName = $any($event.target).value"
+                    title="User-defined alias name for LLM to reference this field">
+                </div>
+              </div>
+            }
+          </div>
+          <div class="summary-actions">
+            <button class="btn btn-primary" (click)="copyPrimaryFieldsConfig()">
+              Copy as JSON Config
+            </button>
+          </div>
+        </div>
+      </div>
+    }
+
+    <!-- Save as ComfyUI App -->
+    @if (selectedWorkflowId() && getPrimaryFields().length > 0) {
+      <div class="card save-app-card">
+        <div class="card-header">
+          <h3>Save as ComfyUI App</h3>
+        </div>
+        <div class="card-body">
+          <div class="form-group">
+            <label for="workflowName">Comfy Workflow Name *</label>
+            <input
+              id="workflowName"
+              type="text"
+              class="form-control"
+              placeholder="Enter a name for your ComfyUI Workflow"
+              [(ngModel)]="appName"
+              (input)="appName.set($any($event.target).value)">
+          </div>
+          <div class="form-group">
+            <label for="appDescription">Description (optional)</label>
+            <textarea
+              id="appDescription"
+              class="form-control"
+              rows="3"
+              placeholder="Enter a description for your app"
+              [(ngModel)]="appDescription"
+              (input)="appDescription.set($any($event.target).value)"></textarea>
+          </div>
+          <div class="form-actions">
+            <button 
+              class="btn btn-success" 
+              (click)="saveAsApp()" 
+              [disabled]="!canSaveApp()"
+              [class.loading]="savingApp()">
+              @if (savingApp()) {
+                <span class="spinner"></span> Saving...
+              } @else {
+                Save as ComfyUI App
+              }
+            </button>
+          </div>
+          @if (saveSuccess()) {
+            <div class="alert alert-success mt-3">{{ saveSuccess() }}</div>
+          }
+          @if (error() && !saveSuccess()) {
+            <div class="alert alert-danger mt-3">{{ error() }}</div>
+          }
+        </div>
+      </div>
+    }
+  }
+
+  <!-- MANAGE TAB -->
+  @if (activeTab() === 'manage') {
+    <div class="manage-tab">
+      <div class="card apps-list-card">
+        <div class="card-header">
+          <h3>ComfyUI Apps Management</h3>
+        </div>
+        <div class="card-body">
+          @if (loadingApps()) {
+            <div class="loading">Loading apps...</div>
+          } @else if (apps().length === 0) {
+            <div class="empty-state">
+              <p>No ComfyUI Apps created yet.</p>
+              <p class="text-muted">Switch to the "Create New App" tab to create your first app.</p>
+            </div>
+          } @else {
+            <div class="apps-grid">
+              @for (app of apps(); track app.id) {
+                <div class="app-card">
+                  <div class="app-header">
+                    <h4>{{ app.name }}</h4>
+                    <span class="badge" [class.active]="app.isActive" [class.inactive]="!app.isActive">
+                      {{ app.isActive ? 'Active' : 'Inactive' }}
+                    </span>
+                  </div>
+                  <p class="app-description">{{ app.description || 'No description' }}</p>
+                  <div class="app-meta">
+                    <span>Workflow: {{ getWorkflowName(app.workflowId) }}</span>
+                    <span>Fields: {{ app.primaryFields.length }}</span>
+                  </div>
+                  <div class="app-actions">
+                    <button class="btn btn-sm btn-primary" (click)="openExecuteModal(app)" [disabled]="executing()">
+                      Execute
+                    </button>
+                    <button class="btn btn-sm btn-secondary" (click)="editApp(app)">
+                      Edit
+                    </button>
+                    <button class="btn btn-sm btn-danger" (click)="deleteApp(app.id, $event)">
+                      Delete
+                    </button>
+                  </div>
+                </div>
+              }
+            </div>
+          }
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- Edit Modal (when editing an existing app) -->
+  @if (editingApp()) {
+    <div class="modal-overlay" (click)="closeModal()">
+      <div class="modal" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <h3>{{ isEditing() ? 'Edit ComfyUI App' : 'Create ComfyUI App' }}</h3>
+          <button class="btn-close" (click)="closeModal()">×</button>
+        </div>
+        <div class="modal-body">
+          <form (ngSubmit)="isEditing() ? saveApp() : saveAsApp()" #appForm="ngForm">
+            <div class="form-group">
+              <label>App Name *</label>
+              <input type="text" class="form-control" [(ngModel)]="appName" name="name" required>
+            </div>
+            <div class="form-group">
+              <label>Description</label>
+              <textarea class="form-control" [(ngModel)]="appDescription" name="description" rows="3"></textarea>
+            </div>
+            <div class="form-group">
+              <label>Workflow *</label>
+              <select class="form-control" [(ngModel)]="selectedWorkflowId" name="workflowId" required (change)="onWorkflowSelect()">
+                <option value="">Select a workflow</option>
+                @for (wf of getCurrentWorkflows(); track getWorkflowKey(wf)) {
+                  <option [value]="getWorkflowKey(wf)">{{ getWorkflowDisplayName(wf) }}</option>
+                }
+              </select>
+            </div>
+
+            @if (hasAvailableInputs()) {
+              <div class="form-section">
+                <h4>Primary Fields Configuration</h4>
+                <p class="help-text">Select which workflow inputs should be exposed as primary fields that users can configure.</p>
+                
+                @for (input of availableInputs() | keyvalue; track input.key) {
+                  <div class="input-row" [class.primary]="input.value.isPrimary">
+                    <input type="checkbox" 
+                           [checked]="input.value.isPrimary" 
+                           (change)="togglePrimaryFieldByKey(input.key, $event)"
+                           [id]="'primary-' + input.key">
+                    <label [for]="'primary-' + input.key" class="input-label">
+                      <span class="node-name">{{ input.value.nodeId }}</span>
+                      <span class="input-name">{{ input.value.inputName }}</span>
+                      <span class="default-value">Default: {{ input.value.defaultValue }}</span>
+                    </label>
+                    @if (input.value.isPrimary) {
+                      <div class="primary-field-config">
+                        <div class="config-row">
+                          <label>Label:</label>
+                          <input type="text" class="form-control" 
+                                 [value]="getPrimaryField(input.key)?.label || ''"
+                                 (input)="updatePrimaryField(input.key, 'label', $event)"
+                                 name="label-{{input.key}}">
+                        </div>
+                        <div class="config-row">
+                          <label>Type:</label>
+                          <select class="form-control" 
+                                  [value]="getPrimaryField(input.key)?.type || 'string'"
+                                  (change)="updatePrimaryField(input.key, 'type', $event)"
+                                  name="type-{{input.key}}">
+                            <option value="string">String</option>
+                            <option value="number">Number</option>
+                            <option value="boolean">Boolean</option>
+                            <option value="select">Select</option>
+                            <option value="file">File</option>
+                            <option value="folder">Folder</option>
+                          </select>
+                        </div>
+                        <div class="config-row">
+                          <label>Alias (for LLM):</label>
+                          <input type="text" class="form-control" 
+                                 [value]="getPrimaryField(input.key)?.aliasName || ''"
+                                 (input)="updatePrimaryField(input.key, 'aliasName', $event)"
+                                 name="alias-{{input.key}}"
+                                 placeholder="e.g., scene_description">
+                        </div>
+                        <div class="config-row" *ngIf="getPrimaryField(input.key)?.type === 'number'">
+                          <label>Min:</label>
+                          <input type="number" class="form-control" 
+                                 [value]="getPrimaryField(input.key)?.min || 0"
+                                 (input)="updatePrimaryField(input.key, 'min', $event)"
+                                 name="min-{{input.key}}">
+                        </div>
+                        <div class="config-row" *ngIf="getPrimaryField(input.key)?.type === 'number'">
+                          <label>Max:</label>
+                          <input type="number" class="form-control" 
+                                 [value]="getPrimaryField(input.key)?.max || 100"
+                                 (input)="updatePrimaryField(input.key, 'max', $event)"
+                                 name="max-{{input.key}}">
+                        </div>
+                        <div class="config-row" *ngIf="getPrimaryField(input.key)?.type === 'number'">
+                          <label>Step:</label>
+                          <input type="number" class="form-control" 
+                                 [value]="getPrimaryField(input.key)?.step || 1"
+                                 (input)="updatePrimaryField(input.key, 'step', $event)"
+                                 name="step-{{input.key}}">
+                        </div>
+                        <div class="config-row" *ngIf="getPrimaryField(input.key)?.type === 'select'">
+                          <label>Options (comma-separated):</label>
+                          <input type="text" class="form-control" 
+                                 [value]="getPrimaryField(input.key)?.options?.join(', ') || ''"
+                                 (input)="updatePrimaryField(input.key, 'options', $event)"
+                                 name="options-{{input.key}}"
+                                 placeholder="option1, option2, option3">
+                        </div>
+                        <div class="config-row">
+                          <label>Tooltip:</label>
+                          <input type="text" class="form-control" 
+                                 [value]="getPrimaryField(input.key)?.tooltip || ''"
+                                 (input)="updatePrimaryField(input.key, 'tooltip', $event)"
+                                 name="tooltip-{{input.key}}"
+                                 placeholder="Help text for users">
+                        </div>
+                        <div class="config-row">
+                          <label>Required:</label>
+                          <input type="checkbox" class="form-check-input" 
+                                 [checked]="getPrimaryField(input.key)?.required || false"
+                                 (change)="updatePrimaryField(input.key, 'required', $event)"
+                                 name="required-{{input.key}}">
+                        </div>
+                        <div class="config-row">
+                          <label>Order:</label>
+                          <input type="number" class="form-control" 
+                                 [value]="getPrimaryField(input.key)?.order || 0"
+                                 (input)="updatePrimaryField(input.key, 'order', $event)"
+                                 name="order-{{input.key}}">
+                        </div>
+                      </div>
+                    }
+                  </div>
+                }
+              </div>
+            }
+            
+            <div class="modal-actions">
+              <button type="button" class="btn btn-secondary" (click)="closeModal()">Cancel</button>
+              <button type="submit" class="btn btn-primary" [disabled]="appForm.invalid || savingApp()" [class.loading]="savingApp()">
+                @if (savingApp()) {
+                  <span class="spinner"></span> Saving...
+                } @else if (isEditing()) {
+                  Save Changes
+                } @else {
+                  Save as ComfyUI App
+                }
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- Execute Modal -->
+  @if (executingApp()) {
+    <div class="modal-overlay" (click)="closeExecuteModal()">
+      <div class="modal" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <h3>Execute: {{ executingApp()?.name }}</h3>
+          <button class="btn-close" (click)="closeExecuteModal()">×</button>
+        </div>
+        <div class="modal-body">
+          <form (ngSubmit)="executeApp()" #execForm="ngForm">
+            @for (pf of executingAppPrimaryFields(); track pf.nodeId + ':' + pf.inputName) {
+              <div class="form-group">
+                <label>{{ pf.label }} <span class="required" *ngIf="pf.required">*</span></label>
+                @if (pf.type === 'boolean') {
+                  <input type="checkbox" class="form-check-input" 
+                         [checked]="getPrimaryValue(pf)"
+                         (change)="setPrimaryValue(pf, $event)"
+                         [name]="'exec-' + pf.nodeId + ':' + pf.inputName">
+                } @else if (pf.type === 'select') {
+                  <select class="form-control" 
+                          [value]="getPrimaryValue(pf)"
+                          (change)="setPrimaryValue(pf, $event)"
+                          [name]="'exec-' + pf.nodeId + ':' + pf.inputName">
+                    <option *ngFor="let opt of pf.options" [value]="opt">{{ opt }}</option>
+                  </select>
+                } @else if (pf.type === 'number') {
+                  <input type="number" class="form-control" 
+                         [value]="getPrimaryValue(pf)"
+                         (input)="setPrimaryValue(pf, $event)"
+                         [name]="'exec-' + pf.nodeId + ':' + pf.inputName"
+                         [min]="pf.min || 0" [max]="pf.max || 100" [step]="pf.step || 1">
+                } @else {
+                  <input type="text" class="form-control" 
+                         [value]="getPrimaryValue(pf)"
+                         (input)="setPrimaryValue(pf, $event)"
+                         [name]="'exec-' + pf.nodeId + ':' + pf.inputName"
+                         [placeholder]="pf.defaultValue">
+                }
+                @if (pf.tooltip) {
+                  <small class="form-text text-muted">{{ pf.tooltip }}</small>
+                }
+              </div>
+            }
+            <div class="modal-actions">
+              <button type="button" class="btn btn-secondary" (click)="closeExecuteModal()">Cancel</button>
+              <button type="submit" class="btn btn-primary" [disabled]="execForm.invalid || executing()">
+                {{ executing() ? 'Executing...' : 'Execute' }}
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  }
+</div>

@@ -527,7 +527,16 @@ export interface LLMAppDetailResponse {
 }
 
 // ScriptFrame Workflow Models
-export type ScriptFrameNodeType = 'worker' | 'llm' | 'comfyui-stack' | 'comfyui-app';
+export type ScriptFrameNodeType =
+  | 'worker'
+  | 'llm'
+  | 'comfyui-stack'
+  | 'comfyui-app'
+  // Start node: entry point / trigger. Emits no data, only lets the first node in the workflow connect.
+  | 'start'
+  // Character-Scene-Creator node: takes a script + arrays of character/location prompts + a ComfyUI
+  // stack, and emits the (enriched) script plus arrays of rendered character/location image paths.
+  | 'character-scene-creator';
 
 export interface ScriptFrameNodeData {
   appId?: string;
@@ -548,6 +557,13 @@ export interface ScriptFrameNodeData {
   // ComfyUI App node: reference to a specific ComfyUI app
   comfyuiAppId?: string;
   comfyuiAppName?: string;
+  // Character-Scene-Creator node (inline defaults used when the matching input port is unconnected).
+  script?: string;
+  characterPrompts?: string[];
+  locationPrompts?: string[];
+  // Character-Scene-Creator node outputs (populated at runtime with ComfyUI output image paths).
+  characterImages?: string[];
+  locationImages?: string[];
   [key: string]: unknown;
 }
 

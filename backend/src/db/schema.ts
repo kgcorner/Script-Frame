@@ -3,11 +3,21 @@ import { sql } from 'drizzle-orm';
 
 export const jobs = sqliteTable('jobs', {
   id: text('id').primaryKey(),
-  type: text('type', { enum: ['video', 'image', 'audio'] }).notNull(),
-  status: text('status', { enum: ['pending', 'processing', 'completed', 'failed', 'cancelled'] }).notNull().default('pending'),
+  type: text('type', { enum: ['video', 'image', 'audio', 'export'] }).notNull(),
+  // 'not_started' is used by export jobs between creation and the start of the
+  // background stitch (see services/export.ts).
+  status: text('status', { enum: ['not_started', 'pending', 'processing', 'completed', 'failed', 'cancelled'] }).notNull().default('pending'),
   input: text('input', { mode: 'json' }).notNull(),
   output: text('output', { mode: 'json' }),
   error: text('error'),
+  // ComfyUI prompt id returned by /prompt for generator jobs (T2I/T2V/I2V).
+  comfyuiPromptId: text('comfyui_prompt_id'),
+  // Ownership + project scoping (multi-user). Set on every job created after auth
+  // was introduced; NULL on legacy rows — those are visible to admins only. The
+  // FKs (user -> CASCADE, project -> SET NULL) are declared in the raw DDL of
+  // initDb() (db/index.ts), which owns all schema changes.
+  userId: text('user_id'),
+  projectId: text('project_id'),
   progress: real('progress').notNull().default(0),
   priority: integer('priority').notNull().default(0),
   createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`),
@@ -93,6 +103,9 @@ export const llmApps = sqliteTable('llm_apps', {
   temperature: real('temperature').default(0.7),
   maxTokens: integer('max_tokens').default(4096),
   systemPrompt: text('system_prompt'),
+  // Per-app endpoint / API-key overrides for the base URL used when fetching models; take precedence over provider.baseUrl (see llmProviderService.fetchModels / testConnection).
+  endpoint: text('endpoint'),
+  apiKey: text('api_key'),
   config: text('config', { mode: 'json' }).notNull().default('{}'), // Additional model-specific config
   isActive: integer('is_active', { mode: 'boolean' }).notNull().default(true),
   createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`),
@@ -200,6 +213,40 @@ export const videoGenerationJobs = sqliteTable('video_generation_jobs', {
   updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`),
 });
 
+// Users: authentication (email/username + bcrypt password hash) and authorization
+// (role-based access control; 'admin' manages users, 'user' is the default role).
+export const users = sqliteTable('users', {
+  id: text('id').primaryKey(),
+  // Emails are stored lower-cased (normalised by the user service before insert).
+  email: text('email').notNull().unique(),
+  username: text('username').notNull().unique(),
+  // bcrypt hash (services/auth.ts hashPassword) — never returned by any endpoint.
+  passwordHash: text('password_hash').notNull(),
+  role: text('role', { enum: ['admin', 'user'] }).notNull().default('user'),
+  isActive: integer('is_active', { mode: 'boolean' }).notNull().default(true),
+  lastLoginAt: integer('last_login_at', { mode: 'timestamp' }),
+  createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`),
+  updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`),
+});
+
+// Projects: user-owned containers that scope generation jobs (jobs will reference
+// projectId in a later step). Only the owning user may access a project — enforced
+// in services/project.ts against the JWT subject (req.user.sub).
+export const projects = sqliteTable('projects', {
+  id: text('id').primaryKey(),
+  // Owner. Cascades: deleting a user removes their projects.
+  userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  name: text('name').notNull(),
+  description: text('description'),
+  aspectRatio: text('aspect_ratio').notNull().default('16:9'),
+  modelPreset: text('model_preset').notNull().default('default'),
+  status: text('status', { enum: ['active', 'draft', 'completed'] }).notNull().default('active'),
+  thumbnailUrl: text('thumbnail_url'),
+  sceneCount: integer('scene_count', { mode: 'number' }).notNull().default(0),
+  createdAt: text('created_at').notNull(),
+  updatedAt: text('updated_at').notNull(),
+});
+
 export type StoryGenerationJob = typeof storyGenerationJobs.$inferSelect;
 export type NewStoryGenerationJob = typeof storyGenerationJobs.$inferInsert;
 export type VideoGenerationJob = typeof videoGenerationJobs.$inferSelect;
@@ -230,3 +277,7 @@ export type ComfyUIStack = typeof comfyuiStacks.$inferSelect;
 export type NewComfyUIStack = typeof comfyuiStacks.$inferInsert;
 export type ComfyUIStackApp = typeof comfyuiStackApps.$inferSelect;
 export type NewComfyUIStackApp = typeof comfyuiStackApps.$inferInsert;
+export type User = typeof users.$inferSelect;
+export type NewUser = typeof users.$inferInsert;
+export type Project = typeof projects.$inferSelect;
+export type NewProject = typeof projects.$inferInsert;

@@ -1,8 +1,9 @@
 import { db, schema } from '../db/index.js';
 import { eq, desc } from 'drizzle-orm';
+import { config } from '../config/index.js';
 import { omnirouteService } from './omniroute.js';
 import { comfyuiService } from './comfyui.js';
-import type { ServiceHealthCheck, NewServiceHealth } from '../types/index.js';
+import type { ServiceHealthCheck, NewServiceHealth, ServiceConnectionCheck, ServiceConnectionStatus } from '../types/index.js';
 
 export class HealthService {
   async checkOmniroute(): Promise<ServiceHealthCheck> {
@@ -55,6 +56,51 @@ export class HealthService {
       this.checkComfyUI(),
     ]);
     return [omniroute, comfyui];
+  }
+
+  // Live connection check for GET /api/health/connection: probes the LLM service
+  // (Omniroute) and ComfyUI in parallel. Pure read — nothing is recorded to the
+  // service_health table, so it is safe to poll for UI status indicators.
+  async checkConnections(): Promise<ServiceConnectionStatus> {
+    const [llm, comfyui] = await Promise.all([
+      this.checkLlmConnection(),
+      this.checkComfyuiConnection(),
+    ]);
+    return {
+      llm,
+      comfyui,
+      allConnected: llm.connected && comfyui.connected,
+      checkedAt: new Date().toISOString(),
+    };
+  }
+
+  private async checkLlmConnection(): Promise<ServiceConnectionCheck> {
+    const start = Date.now();
+    const result = await omnirouteService.connectionCheck();
+    return {
+      service: 'omniroute',
+      label: 'LLM',
+      endpoint: config.omniroute.baseUrl,
+      connected: result.connected,
+      status: result.healthy ? 'healthy' : 'unhealthy',
+      latency: Date.now() - start,
+      error: result.error ?? null,
+    };
+  }
+
+  private async checkComfyuiConnection(): Promise<ServiceConnectionCheck> {
+    const start = Date.now();
+    const result = await comfyuiService.connectionCheck();
+    return {
+      service: 'comfyui',
+      label: 'ComfyUI',
+      endpoint: config.comfyui.baseUrl,
+      connected: result.connected,
+      status: result.healthy ? 'healthy' : 'unhealthy',
+      latency: Date.now() - start,
+      error: result.error ?? null,
+      version: result.version ?? null,
+    };
   }
 
   async recordHealthCheck(check: ServiceHealthCheck): Promise<void> {

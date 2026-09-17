@@ -47,6 +47,28 @@ export class OmnirouteService {
     }
   }
 
+  // Reachability probe for GET /api/health/connection: distinguishes "server
+  // unreachable" (no HTTP response at all) from "reachable but the health path
+  // is not OK" — many LLM routers (OpenAI-compatible endpoints) have no
+  // /health route, yet are perfectly usable.
+  async connectionCheck(): Promise<{ connected: boolean; healthy: boolean; error?: string }> {
+    try {
+      await this.client.get('/health', { timeout: 5000 });
+      return { connected: true, healthy: true };
+    } catch (error) {
+      const axiosError = error as AxiosError;
+      if (axiosError.response) {
+        return {
+          connected: true,
+          healthy: false,
+          error: `Probe /health returned HTTP ${axiosError.response.status} (service reachable)`,
+        };
+      }
+      const reason = axiosError.code ? `${axiosError.message} (${axiosError.code})` : axiosError.message;
+      return { connected: false, healthy: false, error: reason || 'Unknown error' };
+    }
+  }
+
   async getModels(): Promise<string[]> {
     try {
       const response = await this.client.get<string[]>('/models');

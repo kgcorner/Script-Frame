@@ -34,6 +34,8 @@ const NODE_COLORS: Record<ScriptFrameNodeType, { box: string; text: string; bg: 
   llm: { box: '#c4b5fd', text: '#5b21b6', bg: '#f3e8ff' },         // Violet - faded header, dark violet text
   'comfyui-stack': { box: '#67e8f9', text: '#155e75', bg: '#cffafe' }, // Cyan - faded header, dark cyan text
   'comfyui-app': { box: '#5eead4', text: '#134e4a', bg: '#ccfbf1' },   // Teal - faded header, dark teal text
+  start: { box: '#86efac', text: '#14532d', bg: '#dcfce7' },           // Green - workflow entry point
+  'character-scene-creator': { box: '#fda4af', text: '#881337', bg: '#ffe4e6' }, // Rose - character/scene creator
 };
 
 /** Meta attached to each LiteGraph node; used to avoid mutating the underlying model on transient drags. */
@@ -55,6 +57,14 @@ function nodeBodyHeight(type: ScriptFrameNodeType, data?: ScriptFrameNode['data'
   if (type === 'worker') {
     // Worker shows LLM + ComfyUI stack ports; make it a bit taller.
     return data?.llmAppId || data?.comfyuiStackId ? 180 : 150;
+  }
+  if (type === 'start') {
+    // Entry point: a single wildcard output port plus a short hint line.
+    return 60;
+  }
+  if (type === 'character-scene-creator') {
+    // Three data inputs + one ComfyUI stack input on the left; three outputs on the right.
+    return 170;
   }
   return 62;
 }

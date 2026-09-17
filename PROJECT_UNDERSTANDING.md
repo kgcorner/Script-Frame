@@ -92,12 +92,36 @@ Key tables:
 - **`comfyui_stacks`**: Named collections of ComfyUI apps (`baseUrl`, `port`, `isActive`).
 - **`comfyui_stack_apps`**: Join table linking stacks to apps in execution order (`stackId`, `appId`, `position`).
 - **`scriptframe_workflows`**: Graph workflow definitions storing serialized `nodes` and `links`, plus global `nsfw` boolean flag.
+- **`users`**: Authentication + authorization accounts (lower-cased unique `email`, unique `username`, bcrypt `password_hash`, `role` (`admin`|`user`), `is_active`, `last_login_at`).
+- **`projects`**: User-owned containers that will scope generation jobs (`user_id` FK → `users` with `ON DELETE CASCADE`, `name`, `description`). Ownership is enforced per-request against the JWT subject — a user only ever sees and modifies their own projects (foreign ids answer 404 so existence never leaks).
+
+### Authentication & Authorization (`services/auth.ts`, `middleware/auth.ts`)
+
+- **Mechanism**: JWT (HS256) bearer tokens. `POST /api/auth/register`, `POST /api/auth/login`, and immutable artifact media (`GET /api/artifact/:name`) are public; the remaining `/api/*` endpoints are behind the global `router.use(authenticate)` gate. The app-root `/artifact/:name` mirror is also public so returned media URLs work directly in browsers/media players; app-root `/health` stays public as a liveness probe.
+- **Password storage**: bcrypt (cost from `BCRYPT_ROUNDS`, default 10). Policy: 8–128 chars with at least one letter and one digit. Hashes never leave the service layer (`SafeUser`).
+- **Roles**: `admin` manages users (`POST|GET|DELETE /api/users`, assign `role`/`isActive`/`email`); `user` may only read/update their own profile (`GET|PATCH /api/users/:id`). Self-service password changes require `currentPassword`; admins reset passwords directly. Admins cannot demote/deactivate/delete their own account (self-lockout guards).
+- **Bootstrap**: on an empty `users` table, the **first registrant becomes `admin`**; alternatively seed one at startup via `ADMIN_EMAIL`/`ADMIN_USERNAME`/`ADMIN_PASSWORD` (see `initDb()` in `db/index.ts`).
+- **Config** (`config.auth`): `JWT_SECRET` (required in production — server fail-fasts without it; dev fallback otherwise), `JWT_EXPIRES_IN` (`30m`|`12h`|`7d`|seconds, default `24h`), `BCRYPT_ROUNDS`.
+- **Stateless trade-off**: role changes/deactivations take effect when the token expires (up to `JWT_EXPIRES_IN`); `GET /api/auth/me` always reflects the fresh DB row.
 
 ### Routing Architecture (`backend/src/routes/`)
 
 ```
 /api
-├── /llm-providers
+├── /auth                           -> PUBLIC: JWT acquisition (mounted before the auth gate)
+│   ├── POST /register              -> Create account (first account on empty table becomes admin)
+│   ├── POST /login                 -> { identifier (email|username) | email | username, password } -> { user, token }
+│   └── GET  /me                    -> Current principal (authenticated)
+├── /users                          -> ALL routes require auth; create/list/delete are admin-only
+│   ├── POST /                      -> Create user (admin)
+│   ├── GET  /                      -> List users (admin; ?search&role&isActive&limit&offset)
+│   ├── GET|PATCH /:id              -> Self-or-admin detail/update (email/role/isActive are admin-only)
+│   └── DELETE /:id                 -> Delete user (admin; not self)
+├── /projects                       -> Project CRUD, strictly owner-scoped (JWT subject)
+│   ├── POST /                      -> Create project owned by the caller
+│   ├── GET  /                      -> List OWN projects (?search&limit&offset) — generation jobs will live under these
+│   └── GET|PATCH|DELETE /:id       -> Owner-only detail/update/delete (foreign ids -> 404)
+├── /llm-providers                  -> EVERYTHING BELOW REQUIRES `Authorization: Bearer <token>`
 │   ├── GET  /configs               -> Built-in provider templates & defaults
 │   ├── POST /fetch-models          -> Model discovery from active provider endpoint
 │   ├── GET|POST /apps              -> LLM App list & creation (registered before /:id)
@@ -121,8 +145,12 @@ Key tables:
 ├── /workflows                      -> ComfyUI file system workflows & prompt history
 ├── /services                       -> Direct Omniroute and ComfyUI utility endpoints
 ├── /jobs                           -> Async generation job control
-└── /health                         -> Service health checks
+├── /health                         -> Service health checks (records history; 503 when unhealthy)
+│   └── GET  /connection            -> Live LLM (Omniroute) + ComfyUI reachability probe (always 200, no DB writes)
+└── (see /auth and /users at the top for token acquisition and user management)
 ```
+
+Global middleware order (`routes/index.ts`): `/auth` (public) → `authenticate` (JWT gate for every subsequent mount) → feature routers.
 
 ---
 

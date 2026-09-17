@@ -1,16 +1,95 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" class="dark">
 <head>
   <meta charset="utf-8">
   <title>ScriptFrame — AI Video Studio</title>
   <base href="/">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link rel="icon" type="image/x-icon" href="favicon.ico">
+  <link rel="icon" type="image/png" sizes="192x192" href="assets/icon-192.png">
+  <!-- PWA / installable app metadata (manifest lives in public/ → served from the app root) -->
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
+  <meta name="description" content="Turn a prompt into a narrative, AI-generated video: create projects, run ScriptFrame workflows, review the generated clips, and export the final cut.">
+  <meta name="theme-color" content="#0d0e12">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="ScriptFrame">
+  <!-- "black" keeps the status bar opaque so the fixed mobile header is not overlapped -->
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Sora:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            "background": "#0d0e12",
+            "surface": "#121318",
+            "surface-container": "#181920",
+            "surface-container-low": "#1a1b21",
+            "surface-container-high": "#20222a",
+            "surface-container-highest": "#2c2d38",
+            "surface-container-lowest": "#0a0a0e",
+            "surface-bright": "#38393f",
+            "surface-variant": "#34343a",
+            "surface-dim": "#121318",
+            "surface-tint": "#d0bcff",
+            "primary": "#d0bcff",
+            "primary-container": "#a078ff",
+            "on-primary": "#2a0068",
+            "on-primary-container": "#340080",
+            "secondary": "#4cd7f6",
+            "secondary-container": "#03b5d3",
+            "on-secondary": "#003640",
+            "on-secondary-container": "#00424e",
+            "tertiary": "#ffb95f",
+            "tertiary-container": "#ca8100",
+            "on-tertiary": "#472a00",
+            "on-tertiary-container": "#3e2400",
+            "outline": "#6b6678",
+            "outline-variant": "#282933",
+            "on-surface": "#f2f1f8",
+            "on-surface-variant": "#9c96aa",
+            "error": "#ffb4ab",
+            "error-container": "#93000a",
+            "on-error": "#690005",
+            "on-error-container": "#ffdad6"
+          },
+          fontFamily: {
+            "headline-xl": ["Sora", "sans-serif"],
+            "headline-lg": ["Sora", "sans-serif"],
+            "headline-md": ["Sora", "sans-serif"],
+            "headline-sm": ["Sora", "sans-serif"],
+            "body-lg": ["Plus Jakarta Sans", "sans-serif"],
+            "body-md": ["Plus Jakarta Sans", "sans-serif"],
+            "body-sm": ["Plus Jakarta Sans", "sans-serif"],
+            "label-lg": ["JetBrains Mono", "monospace"],
+            "label-md": ["JetBrains Mono", "monospace"],
+            "label-sm": ["JetBrains Mono", "monospace"],
+            "label-xs": ["JetBrains Mono", "monospace"]
+          },
+          spacing: {
+            "space-xl": "2rem",
+            "space-lg": "1.25rem",
+            "space-md": "0.75rem",
+            "space-sm": "0.5rem",
+            "space-xs": "0.25rem",
+            "gutter": "0.75rem",
+            "gutter-tablet": "1rem",
+            "margin": "1rem",
+            "margin-tablet": "1.5rem"
+          }
+        }
+      }
+    }
+  </script>
 </head>
-<body>
+<body class="bg-background font-body-md text-on-surface">
   <app-root></app-root>
 </body>
 </html>
